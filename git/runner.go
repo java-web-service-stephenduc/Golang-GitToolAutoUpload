@@ -60,6 +60,7 @@ func runSingleCommand(ctx context.Context, dir string, onLog func(string), onPro
 
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		HideWindow:    true,
 		CreationFlags: 0x08000000, // CREATE_NO_WINDOW
@@ -118,8 +119,22 @@ func PushHomework(
 		return errors.New("hệ thống chưa cài đặt Git hoặc chưa cấu hình biến môi trường PATH")
 	}
 
-	// 1. Dọn dẹp thư mục .git cũ nếu có
 	gitDir := filepath.Join(folderPath, ".git")
+
+	// Đảm bảo dọn dẹp thư mục .git cục bộ sau khi hoàn thành (thành công, thất bại, hoặc bị hủy)
+	defer func() {
+		if err := os.RemoveAll(gitDir); err != nil {
+			if onLog != nil {
+				onLog(fmt.Sprintf("Cảnh báo dọn dẹp thư mục .git sau khi push: %v", err))
+			}
+		} else {
+			if onLog != nil {
+				onLog("Đã giải phóng tài nguyên và dọn dẹp thư mục .git cục bộ thành công.")
+			}
+		}
+	}()
+
+	// 1. Dọn dẹp thư mục .git cũ nếu có
 	if err := os.RemoveAll(gitDir); err != nil {
 		if onLog != nil {
 			onLog(fmt.Sprintf("Cảnh báo xóa thư mục .git cũ: %v", err))
@@ -129,6 +144,13 @@ func PushHomework(
 	// 2. Chạy git init
 	if err := runSingleCommand(ctx, folderPath, onLog, nil, "git", "init"); err != nil {
 		return fmt.Errorf("git init thất bại: %w", err)
+	}
+
+	// 2.5 Cấu hình tắt tự động GC để tránh các tiến trình chạy ngầm khóa thư mục
+	if err := runSingleCommand(ctx, folderPath, onLog, nil, "git", "config", "gc.auto", "0"); err != nil {
+		if onLog != nil {
+			onLog(fmt.Sprintf("Cảnh báo cấu hình gc.auto: %v", err))
+		}
 	}
 
 	// 3. Cấu hình local git user name/email nếu được chỉ định

@@ -19,6 +19,8 @@ import (
 	"g-gitupload/github"
 	"g-gitupload/history"
 
+	goruntime "runtime"
+
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -160,6 +162,7 @@ func (a *App) StartPush(
 		a.cancelPush = nil
 		a.pushMu.Unlock()
 		pushCancel()
+		goruntime.GC() // Lập tức giải phóng bộ nhớ heap trở lại hệ điều hành sau khi hoàn thành tiến trình nặng
 	}()
 
 	// 1. Kiểm tra cấu hình và Git

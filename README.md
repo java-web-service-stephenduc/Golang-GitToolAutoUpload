@@ -17,6 +17,9 @@ Dự án **G-GitUpload** là ứng dụng desktop hỗ trợ tự động hóa q
     *   Ưu tiên lưu trữ cài đặt người dùng tại đường dẫn hệ thống `%APPDATA%/GGitUpload/config.json`.
     *   Tự động chuyển đổi và nạp cấu hình dự phòng từ file `.env` ở thư mục hiện tại của ứng dụng thông qua bộ phân tích cú pháp thủ công (manual parser) viết bằng Go, không cần cài đặt thêm thư viện bên ngoài.
 *   **Mã Hóa Token Trong Log**: Bộ lọc thông tin nhạy cảm tự động phát hiện và ẩn Token cá nhân (PAT) trước khi in ra bảng Console giám sát log của người dùng.
+*   **Tối ưu hóa tài nguyên mạng (HTTP Connection Pooling)**: Sử dụng một thực thể `http.Client` dùng chung ở mức package để tái sử dụng kết nối TCP (Keep-Alive), tránh lãng phí socket hệ thống và tăng tốc độ kết nối GitHub API.
+*   **Giải phóng bộ nhớ chủ động**: Tự động gọi trình dọn rác hệ thống `runtime.GC()` ngay sau khi kết thúc chuỗi tiến trình push để trả lại bộ nhớ Heap dư thừa cho Windows ngay lập tức.
+*   **Khóa tiến trình duy nhất (Single Instance Lock)**: Sử dụng Named Mutex của Windows (`CreateMutexW`) thông qua gói `syscall` của Go để ngăn chặn chạy nhiều tiến trình cùng lúc, kết hợp gọi trực tiếp `MessageBoxW` để đưa ra thông báo cảnh báo cực kỳ gọn nhẹ trước khi Wails engine khởi động.
 
 ---
 
@@ -45,6 +48,9 @@ Người dùng cuối có thể thực hiện toàn bộ các thao tác quản l
 *   **Bảo mật Khóa Xác nhận**: Ẩn các trường thông tin nhạy cảm như token GitHub và Delete Key dưới dạng password trong Settings UI.
 *   **Tích hợp Hồ sơ GitHub**: Hiển thị avatar cá nhân, followers và số lượng repository công khai trực tiếp trên thanh Sidebar.
 *   **Chạy ngầm không nháy CMD**: Tích hợp các thuộc tính ẩn cửa sổ dòng lệnh cho tất cả các tiến trình Git CLI và trình duyệt, loại bỏ hoàn toàn hiện tượng cửa sổ CMD đen xuất hiện đột ngột gây gián đoạn.
+*   **Tự động dọn dẹp thư mục cục bộ (Auto Cleanup)**: Tự động dọn dẹp và xóa sạch thư mục `.git` tạm thời được tạo ra trong thư mục bài tập ngay khi tiến trình đẩy mã nguồn kết thúc (sử dụng cơ chế trì hoãn `defer` chạy trong mọi tình huống thành công hay thất bại/hủy). Giúp thư mục bài tập của học viên luôn sạch sẽ, không bị rác và không chiếm dụng dung lượng đĩa cục bộ.
+*   **Ngăn chặn treo tiến trình và tiến trình mồ côi**: Tích hợp cấu hình `gc.auto 0` ngăn Git tự động chạy ngầm trình dọn rác (có thể gây khóa thư mục hoặc chạy vô hạn trong nền), kết hợp biến môi trường `GIT_TERMINAL_PROMPT=0` để chấm dứt nhanh tiến trình nếu xảy ra lỗi xác thực.
+*   **Ngăn khởi chạy nhiều cửa sổ (Single Instance Enforcement)**: Giới hạn chỉ cho phép duy nhất một cửa sổ ứng dụng hoạt động trên Windows. Khi khởi chạy bản sao thứ hai, ứng dụng lập tức hiển thị thông báo hộp thoại Warning: "Ứng dụng G-GitUpload đang chạy ngầm hoặc đã được mở ở một cửa sổ khác. Chỉ cho phép chạy một cửa sổ duy nhất" và tự động tắt bản sao mới để tránh xung đột cấu hình.
 
 ---
 

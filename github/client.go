@@ -7,7 +7,13 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
+
+// Shared HTTP client to reuse connections and avoid socket churn
+var httpClient = &http.Client{
+	Timeout: 15 * time.Second,
+}
 
 type RepositoryInfo struct {
 	Name    string `json:"name"`
@@ -44,8 +50,7 @@ func GetRepository(owner, repoName, token string) (*RepositoryInfo, error) {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.github+json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("không thể kết nối đến GitHub API: %w", err)
 	}
@@ -100,8 +105,7 @@ func CreatePublicRepository(token, owner, repoName string, isOrg bool) (*Reposit
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("không thể kết nối đến GitHub API: %w", err)
 	}
@@ -162,8 +166,7 @@ func ListRepositories(token, owner string, isOrg bool, page int) ([]RepositoryIn
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.github+json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("không thể kết nối đến GitHub API: %w", err)
 	}
@@ -197,8 +200,7 @@ func DeleteRepository(owner, repoName, token string) error {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.github+json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("không thể kết nối đến GitHub API: %w", err)
 	}
@@ -251,8 +253,7 @@ func GetGitHubProfile(token string) (*GitHubProfile, error) {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.github+json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("không thể kết nối đến GitHub API: %w", err)
 	}
