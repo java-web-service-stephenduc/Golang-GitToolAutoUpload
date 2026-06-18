@@ -222,6 +222,28 @@
             </section>
         </main>
     </div>
+
+    <!-- Success Popup Modal -->
+    <div id="success-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3>Đẩy mã nguồn thành công!</h3>
+            </div>
+            <div class="modal-body">
+                <p>Repository của bạn đã được đẩy lên GitHub thành công.</p>
+                <div class="repo-url-display" id="success-modal-url">https://github.com/...</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="success-modal-copy-btn">Copy Link</button>
+                <button class="btn-secondary" id="success-modal-open-btn">Mở trình duyệt</button>
+                <button class="btn-secondary" id="success-modal-close-btn" onclick="closeSuccessModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
     <script src="./src/main.js" type="module"></script>
 </body>
 </html>

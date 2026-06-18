@@ -352,8 +352,13 @@ window.clearConsole = function () {
 
 // Push Process Execution
 window.startPushProcess = async function () {
+	// Clear console immediately at the absolute beginning of push
+	clearConsole();
+	lastSuccessUrl = "";
+
 	if (!selectedFolderPath) {
 		appendConsoleLog("Lỗi: Vui lòng chọn hoặc kéo thả thư mục chứa bài tập.", "error");
+		showToast("Vui lòng chọn thư mục bài tập!", "error");
 		return;
 	}
 
@@ -365,8 +370,6 @@ window.startPushProcess = async function () {
 	const useDefaultCommit = document.getElementById("toggle-default-commit").checked;
 	const customCommitMsg = document.getElementById("custom-commit-msg").value;
 
-	// Reset UI
-	clearConsole();
 	updateProgressBar(0, "Đang chuẩn bị...");
 	setBusyState(true);
 
@@ -385,11 +388,19 @@ window.startPushProcess = async function () {
 		);
 		
 		updateProgressBar(100, "Hoàn tất!");
-		appendConsoleLog("Tiến trình hoàn thành thành công!", "info");
-		loadLastPushedRepo();
+		appendConsoleLog("Tiến trình hoàn thành thành công!", "success");
+		await loadLastPushedRepo();
+		
+		// Show custom styled popup modal upon success
+		if (lastSuccessUrl) {
+			showSuccessPopup(lastSuccessUrl);
+		} else {
+			showToast("Đẩy bài tập thành công!", "success");
+		}
 	} catch (err) {
 		updateProgressBar(0, "Thất bại");
 		appendConsoleLog(`Lỗi tiến trình: ${err}`, "error");
+		showToast(`Push thất bại: ${err}`, "error");
 	} finally {
 		setBusyState(false);
 	}
@@ -425,8 +436,17 @@ function updateProgressBar(percent, text) {
 }
 
 // Bind backend streaming events
+let lastSuccessUrl = "";
 EventsOn("git_log", (msg) => {
-	appendConsoleLog(msg, "info");
+	if (msg.includes("Đẩy bài tập thành công!")) {
+		appendConsoleLog(msg, "success");
+		const match = msg.match(/https?:\/\/[^\s]+/);
+		if (match) {
+			lastSuccessUrl = match[0];
+		}
+	} else {
+		appendConsoleLog(msg, "info");
+	}
 });
 
 EventsOn("git_progress", (percent) => {
@@ -574,7 +594,7 @@ function renderRepositories() {
 // Confirmation prompt and repository deletion
 async function confirmAndDeleteRepo(name) {
 	if (!cachedDeleteKey) {
-		alert("Chưa thiết lập Delete Key trong mục Cài đặt. Vui lòng cấu hình trước khi thực hiện xóa.");
+		showToast("Chưa thiết lập Delete Key trong mục Cài đặt!", "error");
 		switchTab("settings-tab");
 		return;
 	}
@@ -583,16 +603,92 @@ async function confirmAndDeleteRepo(name) {
 	if (confirmInput === null) return;
 
 	if (confirmInput.trim() !== cachedDeleteKey.trim()) {
-		alert("Delete Key không khớp! Không thể xóa repository.");
+		showToast("Delete Key không khớp! Không thể xóa repository.", "error");
 		return;
 	}
 
 	try {
 		appendConsoleLog(`Đang gửi yêu cầu xóa repository: ${name}...`, "info");
 		await DeleteRepo(name);
-		alert(`Đã xóa thành công repository '${name}' khỏi GitHub.`);
+		showToast(`Đã xóa thành công repository '${name}' khỏi GitHub.`, "success");
 		searchRepositories(); // Reload list
 	} catch (err) {
-		alert(`Xóa repository thất bại: ${err}`);
+		showToast(`Xóa repository thất bại: ${err}`, "error");
 	}
 }
+
+// Toast Notification System
+window.showToast = function (message, type = "info") {
+	let container = document.getElementById("toast-container");
+	if (!container) {
+		container = document.createElement("div");
+		container.id = "toast-container";
+		container.className = "toast-container";
+		document.body.appendChild(container);
+	}
+
+	const toast = document.createElement("div");
+	toast.className = `toast-item glass-card ${type}`;
+
+	let icon = "";
+	if (type === "success") {
+		icon = `<svg class="toast-icon success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+	} else if (type === "error") {
+		icon = `<svg class="toast-icon error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+	} else {
+		icon = `<svg class="toast-icon info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+	}
+
+	toast.innerHTML = `
+		${icon}
+		<span class="toast-message">${message}</span>
+		<button class="toast-close-btn">&times;</button>
+	`;
+
+	container.appendChild(toast);
+
+	// Close event
+	toast.querySelector(".toast-close-btn").onclick = () => {
+		toast.classList.add("fade-out");
+		setTimeout(() => toast.remove(), 300);
+	};
+
+	// Auto remove
+	setTimeout(() => {
+		if (toast.parentNode) {
+			toast.classList.add("fade-out");
+			setTimeout(() => toast.remove(), 300);
+		}
+	}, 4000);
+};
+
+// Success Modal Overlay Logic
+window.showSuccessPopup = function (url) {
+	const modal = document.getElementById("success-modal");
+	const urlDisplay = document.getElementById("success-modal-url");
+	const copyBtn = document.getElementById("success-modal-copy-btn");
+	const openBtn = document.getElementById("success-modal-open-btn");
+
+	if (!modal || !urlDisplay) return;
+
+	urlDisplay.innerText = url;
+	modal.style.display = "flex";
+
+	copyBtn.onclick = () => {
+		navigator.clipboard.writeText(url);
+		copyBtn.innerText = "Copied!";
+		showToast("Đã copy link repository vào clipboard!", "success");
+		setTimeout(() => {
+			copyBtn.innerText = "Copy Link";
+		}, 2000);
+	};
+
+	openBtn.onclick = () => {
+		OpenBrowser(url);
+	};
+};
+
+window.closeSuccessModal = function () {
+	const modal = document.getElementById("success-modal");
+	if (modal) modal.style.display = "none";
+};
