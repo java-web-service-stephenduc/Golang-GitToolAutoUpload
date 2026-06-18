@@ -1,0 +1,13 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "g-gitupload",
+  "outputfilename": "g-gitupload",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "StephenDuc",
+    "email": "tranducanh31032006@gmail.com"
+  }
+}

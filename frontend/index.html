@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>G-GitUpload - Windows Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar bên trái -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                </svg>
+                <h2>G-GitUpload</h2>
+            </div>
+            <nav class="menu">
+                <button class="menu-btn active" id="nav-push" onclick="switchTab('push-tab')">Đẩy bài tập</button>
+                <button class="menu-btn" id="nav-search" onclick="switchTab('search-tab')">Tìm kiếm Repo</button>
+                <button class="menu-btn" id="nav-settings" onclick="switchTab('settings-tab')">Cài đặt</button>
+            </nav>
+
+            <!-- Widget Profile GitHub -->
+            <div id="github-profile-card" class="profile-card" style="display: none;">
+                <img id="profile-avatar" src="" alt="Avatar">
+                <div class="profile-info">
+                    <span id="profile-name" class="profile-name">Đang tải...</span>
+                    <span id="profile-followers" class="profile-followers">Followers: 0</span>
+                </div>
+            </div>
+
+            <div class="status-footer">
+                <span class="status-dot red" id="status-dot"></span>
+                <span id="connection-status">Đang kết nối...</span>
+            </div>
+        </aside>
+
+        <!-- Nội dung bên phải -->
+        <main class="main-content">
+            <!-- TAB PUSH CODE -->
+            <section id="push-tab" class="tab-content active">
+                <div class="tab-header">
+                    <h1>Tự Động Đẩy Bài Tập Lên GitHub</h1>
+                    <p>Hỗ trợ kéo thả thư mục và tùy chọn commit message</p>
+                </div>
+
+                <!-- Widget hiển thị repo gần nhất (Tính năng 2) -->
+                <div id="recent-push-widget" class="recent-push-card">
+                    <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="recent-text-container">
+                        <span class="recent-title">Đẩy lên gần đây nhất:</span>
+                        <span id="recent-repo-text" class="recent-val">Không có lịch sử đẩy bài gần đây.</span>
+                    </div>
+                    <button class="btn-link" id="btn-open-recent" style="display: none;">Mở liên kết</button>
+                </div>
+
+                <!-- Vùng Drag & Drop -->
+                <div id="drop-zone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg class="folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.31c-.427 0-.838.169-1.14.47l-1.55 1.55z" />
+                        </svg>
+                        <p id="folder-path-display">Kéo & thả thư mục bài tập hoặc click để chọn</p>
+                    </div>
+                </div>
+
+                <!-- Chọn chế độ upload -->
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label for="mode-selector">Chế độ Upload</label>
+                    <select id="mode-selector" class="select-input" onchange="onModeChange()">
+                        <option value="SESSION_EX">Session + Exercise (Mặc định)</option>
+                        <option value="MINI_PROJECT">Session + Miniproject</option>
+                        <option value="CUSTOM_REPOSITORY">Custom Repository (Tên tùy chọn)</option>
+                    </select>
+                </div>
+
+                <!-- Nhập cấu hình repository -->
+                <div class="input-grid" id="input-grid">
+                    <div class="input-group" id="session-group">
+                        <label for="session-num">Session (Số buổi)</label>
+                        <input type="number" id="session-num" placeholder="Ví dụ: 15" min="1">
+                    </div>
+                    <div class="input-group" id="ex-group">
+                        <label for="ex-num">Exercise (Bài tập số)</label>
+                        <input type="number" id="ex-num" placeholder="Ví dụ: 01" min="1">
+                    </div>
+                    <div class="input-group" id="miniproject-group" style="display: none;">
+                        <label for="miniproject-text">Tên Miniproject</label>
+                        <input type="text" id="miniproject-text" placeholder="Ví dụ: snake-game">
+                    </div>
+                    <div class="input-group" id="custom-repo-group" style="display: none;">
+                        <label for="custom-repo-name">Tên Repository</label>
+                        <input type="text" id="custom-repo-name" placeholder="Ví dụ: my-golang-project">
+                    </div>
+                </div>
+
+                <!-- Tùy chọn Commit Message (Tính năng 1) -->
+                <div class="commit-options">
+                    <label class="switch-container">
+                        <input type="checkbox" id="toggle-default-commit" checked onchange="onCommitToggle()">
+                        <span class="switch-slider"></span>
+                        <span class="switch-label">Sử dụng commit message mặc định</span>
+                    </label>
+                    <div id="custom-commit-wrapper" class="input-group transition-collapse" style="display: none; margin-top: 15px;">
+                        <label for="custom-commit-msg">Commit Message Tùy Chỉnh</label>
+                        <input type="text" id="custom-commit-msg" placeholder="Nhập tin nhắn commit...">
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-wrapper">
+                    <div class="progress-info">
+                        <span id="progress-text">Sẵn sàng</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progress-bar" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" id="btn-push" onclick="startPushProcess()">Bắt đầu Push</button>
+                    <button class="btn-danger" id="btn-cancel-push" onclick="cancelPushProcess()" disabled>Hủy</button>
+                </div>
+
+                <!-- Monitor Console -->
+                <div class="console-wrapper">
+                    <div class="console-header">
+                        <span>Console Monitor Log</span>
+                        <button class="btn-clear" onclick="clearConsole()">Xóa Log</button>
+                    </div>
+                    <div id="console-output" class="console-output"></div>
+                </div>
+            </section>
+
+            <!-- TAB SEARCH REPO -->
+            <section id="search-tab" class="tab-content">
+                <div class="tab-header">
+                    <h1>Tìm Kiếm & Quản Lý Repository</h1>
+                    <p>Tra cứu danh sách repo và xóa khi cần thiết</p>
+                </div>
+
+                <div class="search-bar-container">
+                    <input type="text" id="search-query" placeholder="Nhập từ khóa tìm kiếm repo..." onkeyup="handleSearchKeyUp(event)">
+                    <button class="btn-primary" onclick="searchRepositories()">Tìm kiếm</button>
+                </div>
+
+                <div id="repo-list-container" class="repo-list-grid">
+                    <!-- Cards will be rendered here -->
+                </div>
+
+                <div class="pagination-container" id="pagination-controls" style="display: none;">
+                    <button class="btn-secondary" id="btn-prev-page" onclick="prevSearchPage()">Trang trước</button>
+                    <span id="page-info">Trang 1 / 1 (0 repo)</span>
+                    <button class="btn-secondary" id="btn-next-page" onclick="nextSearchPage()">Trang sau</button>
+                </div>
+            </section>
+
+            <!-- TAB SETTINGS -->
+            <section id="settings-tab" class="tab-content">
+                <div class="tab-header">
+                    <h1>Cấu Hình Hệ Thống</h1>
+                    <p>Thiết lập thông tin tài khoản GitHub và các mẫu đặt tên</p>
+                </div>
+
+                <div class="settings-form glass-card">
+                    <div class="input-group">
+                        <label for="setting-token">GitHub Personal Access Token (PAT)</label>
+                        <div class="password-input-container">
+                            <input type="password" id="setting-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                            <button type="button" class="btn-toggle-visibility" onclick="toggleTokenVisibility()">👁</button>
+                        </div>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="setting-username">GitHub Username</label>
+                            <input type="text" id="setting-username" placeholder="Nhập username...">
+                        </div>
+                        <div class="input-group">
+                            <label for="setting-org">GitHub Organization Name (Tùy chọn)</label>
+                            <input type="text" id="setting-org" placeholder="Để trống nếu là repo cá nhân...">
+                        </div>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="setting-pattern">Naming Pattern</label>
+                            <input type="text" id="setting-pattern" placeholder="session%s-ex%s-homework">
+                        </div>
+                        <div class="input-group">
+                            <label for="setting-delete-key">Delete Repository Key</label>
+                            <div class="password-input-container">
+                                <input type="password" id="setting-delete-key" placeholder="Khóa xác nhận xóa repo...">
+                                <button type="button" class="btn-toggle-visibility" onclick="toggleDeleteKeyVisibility()">👁</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="setting-theme">Giao diện (Theme)</label>
+                            <select id="setting-theme" class="select-input">
+                                <option value="dark">Tối (Dark Mode)</option>
+                                <option value="light">Sáng (Light Mode)</option>
+                                <option value="system">Hệ thống (System Theme)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn-primary" onclick="saveSettings()">Lưu cài đặt</button>
+                        <span id="settings-status-msg" class="status-message"></span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="./src/main.js" type="module"></script>
+</body>
+</html>
