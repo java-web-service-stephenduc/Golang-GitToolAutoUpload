@@ -10,6 +10,10 @@ export function DeleteRepo(arg1) {
   return window['go']['main']['App']['DeleteRepo'](arg1);
 }
 
+export function DetectIDEs() {
+  return window['go']['main']['App']['DetectIDEs']();
+}
+
 export function GetGitHubProfile() {
   return window['go']['main']['App']['GetGitHubProfile']();
 }
@@ -18,24 +22,60 @@ export function GetLastPushedRepo() {
   return window['go']['main']['App']['GetLastPushedRepo']();
 }
 
+export function GetLocalGuideHTML() {
+  return window['go']['main']['App']['GetLocalGuideHTML']();
+}
+
+export function GetMyRepos() {
+  return window['go']['main']['App']['GetMyRepos']();
+}
+
+export function GetRepoContents(arg1, arg2) {
+  return window['go']['main']['App']['GetRepoContents'](arg1, arg2);
+}
+
+export function GetRepoLanguageStats(arg1) {
+  return window['go']['main']['App']['GetRepoLanguageStats'](arg1);
+}
+
+export function GetRepoReadme(arg1) {
+  return window['go']['main']['App']['GetRepoReadme'](arg1);
+}
+
 export function GetSettings() {
   return window['go']['main']['App']['GetSettings']();
+}
+
+export function GetTokenReport() {
+  return window['go']['main']['App']['GetTokenReport']();
 }
 
 export function OpenBrowser(arg1) {
   return window['go']['main']['App']['OpenBrowser'](arg1);
 }
 
+export function OpenDirectoryInExplorer(arg1) {
+  return window['go']['main']['App']['OpenDirectoryInExplorer'](arg1);
+}
+
+export function OpenInIDE(arg1, arg2) {
+  return window['go']['main']['App']['OpenInIDE'](arg1, arg2);
+}
+
 export function SaveSettings(arg1) {
   return window['go']['main']['App']['SaveSettings'](arg1);
 }
 
-export function SearchRepos(arg1) {
-  return window['go']['main']['App']['SearchRepos'](arg1);
+export function SearchRepos(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SearchRepos'](arg1, arg2, arg3, arg4);
 }
 
 export function SelectDirectory() {
   return window['go']['main']['App']['SelectDirectory']();
+}
+
+export function StartClone(arg1, arg2) {
+  return window['go']['main']['App']['StartClone'](arg1, arg2);
 }
 
 export function StartPush(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {

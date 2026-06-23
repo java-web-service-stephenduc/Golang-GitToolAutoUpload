@@ -1,17 +1,23 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-	"syscall"
 	"sync"
+	"syscall"
 	"time"
 
 	"g-gitupload/config"
@@ -68,10 +74,32 @@ func (a *App) OpenBrowser(url string) error {
 	return cmd.Run()
 }
 
+func (a *App) getRecentUploadDir() string {
+	repo, err := history.GetLastPushed()
+	if err != nil || repo == nil || repo.LocalPath == "" {
+		return ""
+	}
+	
+	path := filepath.Clean(repo.LocalPath)
+	for {
+		if path == "" || path == "." || path == filepath.Dir(path) {
+			break
+		}
+		info, err := os.Stat(path)
+		if err == nil && info.IsDir() {
+			return path
+		}
+		path = filepath.Dir(path)
+	}
+	return ""
+}
+
 // SelectDirectory opens a directory dialog and returns the selected path
 func (a *App) SelectDirectory() (string, error) {
+	defaultDir := a.getRecentUploadDir()
 	return runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Chọn thư mục bài tập",
+		Title:            "Chọn thư mục bài tập",
+		DefaultDirectory: defaultDir,
 	})
 }
 
@@ -87,8 +115,13 @@ func (a *App) GetGitHubProfile() (*github.GitHubProfile, error) {
 	return github.GetGitHubProfile(cfg.GithubToken)
 }
 
-// SearchRepos searches GitHub repositories based on query (paginated, 100 items limit from GitHub)
-func (a *App) SearchRepos(query string) ([]github.RepositoryInfo, error) {
+type SearchReposResponse struct {
+	Repos      []github.RepositoryInfo `json:"repos"`
+	TotalCount int                     `json:"total_count"`
+}
+
+// SearchRepos searches GitHub repositories based on query and handles pagination & sorting
+func (a *App) SearchRepos(query string, page, pageSize int, sortBy string) (*SearchReposResponse, error) {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return nil, err
@@ -104,22 +137,17 @@ func (a *App) SearchRepos(query string) ([]github.RepositoryInfo, error) {
 		isOrg = true
 	}
 
-	// Fetch page 1 (up to 100 repositories)
-	repos, err := github.ListRepositories(cfg.GithubToken, owner, isOrg, 1)
+	repos, totalCount, err := github.SearchRepositories(cfg.GithubToken, owner, query, isOrg, page, pageSize)
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter repositories in Go backend
-	var filtered []github.RepositoryInfo
-	normalizedQuery := strings.TrimSpace(strings.ToLower(query))
-	for _, repo := range repos {
-		if normalizedQuery == "" || strings.Contains(strings.ToLower(repo.Name), normalizedQuery) {
-			filtered = append(filtered, repo)
-		}
-	}
+	github.SortRepositories(repos, sortBy)
 
-	return filtered, nil
+	return &SearchReposResponse{
+		Repos:      repos,
+		TotalCount: totalCount,
+	}, nil
 }
 
 // DeleteRepo deletes a repository from GitHub
@@ -235,13 +263,9 @@ func (a *App) StartPush(
 	// 3. Xác định Commit Message
 	var commitMsg string
 	if useDefaultCommit {
-		switch mode {
-		case "SESSION_EX":
-			commitMsg = fmt.Sprintf("Upload bài tập: Session %s - Exercise %s", sessionVal, exVal)
-		case "MINI_PROJECT":
-			commitMsg = fmt.Sprintf("Upload bài tập: Session %s - Miniproject %s", sessionVal, miniProjectVal)
-		case "CUSTOM_REPOSITORY":
-			commitMsg = fmt.Sprintf("Upload repository: %s", repoName)
+		commitMsg = cfg.DefaultCommitMsg
+		if commitMsg == "" {
+			commitMsg = "init"
 		}
 	} else {
 		commitMsg = strings.TrimSpace(customCommitMsg)
@@ -250,11 +274,11 @@ func (a *App) StartPush(
 		}
 	}
 
-	// 4. Tạo Repository trên GitHub
+		// 4. Tạo Repository trên GitHub
 	runtime.EventsEmit(pushCtx, "git_log", "Đang tạo repository trên GitHub...")
 	runtime.EventsEmit(pushCtx, "git_progress", 20)
 
-	repoResp, err := github.CreatePublicRepository(cfg.GithubToken, owner, repoName, isOrg)
+	repoResp, err := github.CreateRepository(cfg.GithubToken, owner, repoName, isOrg, cfg.RepoPrivate)
 	if err != nil {
 		return fmt.Errorf("tạo repository thất bại: %w", err)
 	}
@@ -267,7 +291,13 @@ func (a *App) StartPush(
 
 	// 5. Cấu hình Identity và Push bài tập
 	commitName := cfg.GithubUsername
+	if cfg.GitCommitName != "" {
+		commitName = cfg.GitCommitName
+	}
 	commitEmail := commitName + "@users.noreply.github.com"
+	if cfg.GitCommitEmail != "" {
+		commitEmail = cfg.GitCommitEmail
+	}
 
 	runtime.EventsEmit(pushCtx, "git_log", "Bắt đầu đẩy mã nguồn lên remote...")
 
@@ -369,3 +399,407 @@ func validateRepositoryName(name string) error {
 	}
 	return nil
 }
+
+// GetRepoLanguageStats returns the primary language of the repository and its usage percentage
+func (a *App) GetRepoLanguageStats(repoName string) (string, error) {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return "", err
+	}
+	if cfg.GithubToken == "" {
+		return "", errors.New("chưa cài đặt GitHub Token")
+	}
+
+	owner := cfg.GithubUsername
+	if cfg.HasOrganization() {
+		owner = cfg.GithubOrgName
+	}
+
+	return github.GetRepoLanguageStats(owner, repoName, cfg.GithubToken)
+}
+
+// GetRepoContents retrieves files and directories of the repository under the specified path
+func (a *App) GetRepoContents(repoName, path string) ([]github.ContentInfo, error) {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	if cfg.GithubToken == "" {
+		return nil, errors.New("chưa cài đặt GitHub Token")
+	}
+
+	owner := cfg.GithubUsername
+	if cfg.HasOrganization() {
+		owner = cfg.GithubOrgName
+	}
+
+	return github.GetRepoContents(owner, repoName, path, cfg.GithubToken)
+}
+
+// GetRepoReadme retrieves the HTML formatted README file of the repository
+func (a *App) GetRepoReadme(repoName string) (string, error) {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return "", err
+	}
+	if cfg.GithubToken == "" {
+		return "", errors.New("chưa cài đặt GitHub Token")
+	}
+
+	owner := cfg.GithubUsername
+	if cfg.HasOrganization() {
+		owner = cfg.GithubOrgName
+	}
+
+	return github.GetRepoReadme(owner, repoName, cfg.GithubToken)
+}
+
+// GetTokenReport returns diagnostics and reports on the current GitHub PAT
+func (a *App) GetTokenReport() (*github.TokenReport, error) {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	if cfg.GithubToken == "" {
+		return nil, errors.New("chưa cài đặt GitHub Token trong Settings")
+	}
+
+	return github.GetTokenReport(cfg.GithubToken)
+}
+
+//go:embed HUONG_DAN.txt
+var guideContent string
+
+var appHttpClient = &http.Client{
+	Timeout: 15 * time.Second,
+}
+
+// GetLocalGuideHTML renders HUONG_DAN.txt using GitHub's markdown API if possible
+func (a *App) GetLocalGuideHTML() (string, error) {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return "", err
+	}
+	var content string
+	// Thử tải hướng dẫn từ nhánh main của repository online
+	onlineURL := "https://raw.githubusercontent.com/java-web-service-stephenduc/Golang-GitToolAutoUpload/main/HUONG_DAN.txt"
+	resp, err := appHttpClient.Get(onlineURL)
+	if err == nil && resp.StatusCode == http.StatusOK {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err == nil {
+			content = string(bodyBytes)
+		}
+		resp.Body.Close()
+	}
+
+	// Nếu thất bại (404 hoặc mạng lỗi), thử nhánh master làm dự phòng
+	if content == "" {
+		onlineURL = "https://raw.githubusercontent.com/java-web-service-stephenduc/Golang-GitToolAutoUpload/master/HUONG_DAN.txt"
+		resp, err = appHttpClient.Get(onlineURL)
+		if err == nil && resp.StatusCode == http.StatusOK {
+			bodyBytes, err := io.ReadAll(resp.Body)
+			if err == nil {
+				content = string(bodyBytes)
+			}
+			resp.Body.Close()
+		}
+	}
+
+	// Nếu vẫn trống (offline hoặc lỗi mạng), đọc file cục bộ hoặc chuỗi nhúng mặc định
+	if content == "" {
+		data, err := os.ReadFile("HUONG_DAN.txt")
+		if err != nil {
+			content = guideContent
+		} else {
+			content = string(data)
+		}
+	}
+
+	if cfg.GithubToken == "" {
+		return "<pre style='white-space: pre-wrap; font-family: sans-serif; font-size: 13.5px; line-height: 1.6; color: var(--text-primary);'>" + content + "</pre>", nil
+	}
+
+	// Render via GitHub Markdown API
+	url := "https://api.github.com/markdown"
+	payload := map[string]string{
+		"text": content,
+		"mode": "gfm",
+	}
+	jsonBytes, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.GithubToken)
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err = appHttpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("không thể render markdown: %s (Status: %d)", string(bodyBytes), resp.StatusCode)
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bodyBytes), nil
+}
+
+// GetMyRepos fetches the list of repositories from the user's account/organization
+func (a *App) GetMyRepos() ([]github.RepositoryInfo, error) {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	if cfg.GithubToken == "" {
+		return nil, errors.New("chưa cài đặt GitHub Token")
+	}
+
+	owner := cfg.GithubUsername
+	isOrg := false
+	if cfg.HasOrganization() {
+		owner = cfg.GithubOrgName
+		isOrg = true
+	}
+
+	// Fetch up to 100 repositories
+	repos, _, err := github.SearchRepositories(cfg.GithubToken, owner, "", isOrg, 1, 100)
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
+}
+
+// StartClone clones a repository and streams logs via Event
+func (a *App) StartClone(repoURL, destFolder string) error {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return err
+	}
+
+	targetURL := strings.TrimSpace(repoURL)
+	if targetURL == "" {
+		return errors.New("đường dẫn repository trống")
+	}
+
+	targetDest := strings.TrimSpace(destFolder)
+	if targetDest == "" {
+		return errors.New("thư mục lưu trữ trống")
+	}
+
+	// Inject token if it is a github HTTPS URL
+	if strings.Contains(targetURL, "github.com") && cfg.GithubToken != "" {
+		if strings.HasPrefix(targetURL, "https://") {
+			targetURL = "https://" + cfg.GithubToken + "@" + strings.TrimPrefix(targetURL, "https://")
+		}
+	}
+
+	runtime.EventsEmit(a.ctx, "clone_log", "Bắt đầu tiến trình clone...")
+	runtime.EventsEmit(a.ctx, "clone_progress", 10)
+
+	cmd := exec.Command("git", "clone", "--progress", targetURL, targetDest)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow: true,
+	}
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	cmd.Stderr = cmd.Stdout // Redirect stderr to stdout to read both
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	runtime.EventsEmit(a.ctx, "clone_progress", 30)
+
+	scanner := bufio.NewScanner(stdout)
+	scanner.Split(git.SplitByNewlineOrCR)
+
+	// Regex for progress parsing
+	progressRegex := regexp.MustCompile(`(Receiving objects|Resolving deltas):\s+(\d+)%`)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		// Hide sensitive token
+		if cfg.GithubToken != "" {
+			line = strings.ReplaceAll(line, cfg.GithubToken, "******")
+		}
+
+		runtime.EventsEmit(a.ctx, "clone_log", line)
+
+		// Extract progress percentage
+		matches := progressRegex.FindStringSubmatch(line)
+		if len(matches) > 2 {
+			pct, _ := strconv.Atoi(matches[2])
+			uiPct := 40 + int(float64(pct)*0.55)
+			runtime.EventsEmit(a.ctx, "clone_progress", uiPct)
+		}
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		runtime.EventsEmit(a.ctx, "clone_progress", 0)
+		return fmt.Errorf("clone thất bại: %w", err)
+	}
+
+	runtime.EventsEmit(a.ctx, "clone_progress", 100)
+	runtime.EventsEmit(a.ctx, "clone_log", "Đã clone repository thành công!")
+	return nil
+}
+
+type IDEInfo struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
+}
+
+// DetectIDEs returns a list of detected IDEs on the system
+func (a *App) DetectIDEs() []IDEInfo {
+	var ides []IDEInfo
+
+	// 1. VS Code
+	vsCodePaths := []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "Microsoft VS Code", "Code.exe"),
+		filepath.Join(os.Getenv("ProgramFiles"), "Microsoft VS Code", "Code.exe"),
+	}
+	for _, p := range vsCodePaths {
+		if _, err := os.Stat(p); err == nil {
+			ides = append(ides, IDEInfo{Name: "VS Code", Path: p})
+			break
+		}
+	}
+	// Fallback to "code" on PATH
+	if !hasIDE(ides, "VS Code") {
+		if runCommandSilently("code", "--version") == nil {
+			ides = append(ides, IDEInfo{Name: "VS Code", Path: "code"})
+		}
+	}
+
+	// 2. IntelliJ IDEA
+	progFiles := os.Getenv("ProgramFiles")
+	if progFiles != "" {
+		jbDir := filepath.Join(progFiles, "JetBrains")
+		if entries, err := os.ReadDir(jbDir); err == nil {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					p := filepath.Join(jbDir, entry.Name(), "bin", "idea64.exe")
+					if _, err := os.Stat(p); err == nil {
+						ides = append(ides, IDEInfo{Name: "IntelliJ IDEA", Path: p})
+						break
+					}
+				}
+			}
+		}
+	}
+	// JetBrains Toolbox
+	localAppData := os.Getenv("LOCALAPPDATA")
+	if localAppData != "" {
+		toolboxDir := filepath.Join(localAppData, "JetBrains", "Toolbox", "apps")
+		for _, appSub := range []string{"IDEA-U", "IDEA-C"} {
+			appDir := filepath.Join(toolboxDir, appSub)
+			if entries, err := os.ReadDir(appDir); err == nil {
+				for _, chEntry := range entries {
+					if chEntry.IsDir() {
+						chDir := filepath.Join(appDir, chEntry.Name())
+						if buildEntries, err := os.ReadDir(chDir); err == nil {
+							for _, buildEntry := range buildEntries {
+								if buildEntry.IsDir() {
+									p := filepath.Join(chDir, buildEntry.Name(), "bin", "idea64.exe")
+									if _, err := os.Stat(p); err == nil {
+										ides = append(ides, IDEInfo{Name: "IntelliJ IDEA", Path: p})
+										break
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 3. Cursor
+	cursorPaths := []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "cursor", "Cursor.exe"),
+		filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "Programs", "cursor", "Cursor.exe"),
+	}
+	for _, p := range cursorPaths {
+		if _, err := os.Stat(p); err == nil {
+			ides = append(ides, IDEInfo{Name: "Cursor", Path: p})
+			break
+		}
+	}
+	if !hasIDE(ides, "Cursor") {
+		if runCommandSilently("cursor", "--version") == nil {
+			ides = append(ides, IDEInfo{Name: "Cursor", Path: "cursor"})
+		}
+	}
+
+	// 4. Antigravity IDE
+	antigravityPaths := []string{
+		filepath.Join(os.Getenv("USERPROFILE"), ".gemini", "antigravity-ide", "Antigravity.exe"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "antigravity-ide", "Antigravity.exe"),
+	}
+	for _, p := range antigravityPaths {
+		if _, err := os.Stat(p); err == nil {
+			ides = append(ides, IDEInfo{Name: "Antigravity", Path: p})
+			break
+		}
+	}
+
+	return ides
+}
+
+func hasIDE(list []IDEInfo, name string) bool {
+	for _, id := range list {
+		if id.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+// OpenInIDE launches the IDE pointing to the folderPath
+func (a *App) OpenInIDE(idePath string, folderPath string) error {
+	cmd := exec.Command(idePath, folderPath)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow:    true,
+		CreationFlags: 0x08000000,
+	}
+	return cmd.Start()
+}
+
+// OpenDirectoryInExplorer opens a folder in Windows Explorer
+func (a *App) OpenDirectoryInExplorer(folderPath string) error {
+	cmd := exec.Command("explorer.exe", filepath.Clean(folderPath))
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow:    true,
+		CreationFlags: 0x08000000,
+	}
+	return cmd.Start()
+}
+
+func runCommandSilently(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow:    true,
+		CreationFlags: 0x08000000, // CREATE_NO_WINDOW
+	}
+	return cmd.Run()
+}
+

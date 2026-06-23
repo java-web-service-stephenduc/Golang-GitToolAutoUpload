@@ -20,7 +20,10 @@
             </div>
             <nav class="menu">
                 <button class="menu-btn active" id="nav-push" onclick="switchTab('push-tab')">Đẩy bài tập</button>
+                <button class="menu-btn" id="nav-clone" onclick="switchTab('clone-tab')">Sao chép Repo</button>
                 <button class="menu-btn" id="nav-search" onclick="switchTab('search-tab')">Tìm kiếm Repo</button>
+                <button class="menu-btn" id="nav-report" onclick="switchTab('report-tab')">Báo cáo GitHub</button>
+                <button class="menu-btn" id="nav-guide" onclick="switchTab('guide-tab')">Cách hoạt động</button>
                 <button class="menu-btn" id="nav-settings" onclick="switchTab('settings-tab')">Cài đặt</button>
             </nav>
 
@@ -57,7 +60,8 @@
                         <span class="recent-title">Đẩy lên gần đây nhất:</span>
                         <span id="recent-repo-text" class="recent-val">Không có lịch sử đẩy bài gần đây.</span>
                     </div>
-                    <button class="btn-link" id="btn-open-recent" style="display: none;">Mở liên kết</button>
+                    <button class="btn-link" id="btn-open-recent" style="display: none; margin-right: 15px;">Mở liên kết</button>
+                    <button class="btn-secondary" id="btn-copy-recent" style="display: none; padding: 6px 12px; font-size: 12px; border-radius: 6px;">Copy Link</button>
                 </div>
 
                 <!-- Vùng Drag & Drop -->
@@ -139,26 +143,195 @@
                 </div>
             </section>
 
+            <!-- TAB CLONE REPO -->
+            <section id="clone-tab" class="tab-content">
+                <div class="tab-header">
+                    <h1>Sao Chép Repository Từ GitHub</h1>
+                    <p>Hỗ trợ chọn repo từ tài khoản hoặc dán link HTTPS tùy ý</p>
+                </div>
+
+                <div class="settings-form glass-card" style="margin-bottom: 25px;">
+                    <!-- Option to choose clone source -->
+                    <div class="input-group" style="margin-bottom: 20px;">
+                        <label>Nguồn Sao Chép (Clone Source)</label>
+                        <div class="segment-control">
+                            <button type="button" class="segment-btn active" id="btn-clone-src-github" onclick="setCloneSource('github')">Chọn từ tài khoản GitHub</button>
+                            <button type="button" class="segment-btn" id="btn-clone-src-custom" onclick="setCloneSource('custom')">Nhập link clone thủ công</button>
+                        </div>
+                    </div>
+
+                    <!-- GitHub repo selection -->
+                    <div class="input-group" id="clone-github-group" style="margin-bottom: 20px;">
+                        <label for="clone-repo-select">Danh sách Repository</label>
+                        <select id="clone-repo-select" class="select-input">
+                            <option value="">-- Đang tải danh sách repo --</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom HTTPS url input -->
+                    <div class="input-group" id="clone-custom-group" style="display: none; margin-bottom: 20px;">
+                        <label for="clone-repo-url">Link clone HTTPS của Repository</label>
+                        <input type="text" id="clone-repo-url" placeholder="Ví dụ: https://github.com/username/my-repo.git">
+                    </div>
+
+                    <!-- Destination path selector -->
+                    <div class="input-group" style="margin-bottom: 20px;">
+                        <label for="clone-dest-path">Thư mục lưu trữ trên máy tính</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="clone-dest-path" placeholder="Ví dụ: D:/BaiTap/github-project" readonly style="flex-grow: 1;">
+                            <button class="btn-secondary" onclick="selectCloneDestination()" style="flex-shrink: 0; padding: 10px 16px; font-size: 13px;">Chọn thư mục</button>
+                        </div>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="progress-wrapper" style="margin-top: 25px; margin-bottom: 20px;">
+                        <div class="progress-info">
+                            <span id="clone-progress-text">Sẵn sàng</span>
+                            <span id="clone-progress-percent">0%</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="clone-progress-bar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="button-group" style="margin-bottom: 0;">
+                        <button class="btn-primary" id="btn-clone-start" onclick="startCloneProcess()">Bắt đầu Clone</button>
+                        <button class="btn-danger" id="btn-clone-cancel" onclick="cancelCloneProcess()" disabled>Hủy</button>
+                    </div>
+                </div>
+
+                <!-- Open Project in IDE section (Dynamic) -->
+                <div id="clone-success-ide-actions" class="glass-card" style="display: none; margin-bottom: 25px; border-color: var(--accent-green); padding: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <svg class="toast-icon success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 22px; height: 22px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: var(--text-primary);">Tải về thành công! Mở dự án bằng công cụ lập trình:</h3>
+                    </div>
+                    <div id="ide-buttons-container" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <!-- IDE buttons will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Clone Console Output -->
+                <div class="console-wrapper">
+                    <div class="console-header">
+                        <span>Console Clone Log</span>
+                        <button class="btn-clear" onclick="clearCloneConsole()">Xóa Log</button>
+                    </div>
+                    <div id="clone-console-output" class="console-output" style="height: 180px;"></div>
+                </div>
+            </section>
+
             <!-- TAB SEARCH REPO -->
             <section id="search-tab" class="tab-content">
-                <div class="tab-header">
-                    <h1>Tìm Kiếm & Quản Lý Repository</h1>
-                    <p>Tra cứu danh sách repo và xóa khi cần thiết</p>
+                <!-- VÙNG TÌM KIẾM (Mặc định) -->
+                <div id="search-list-view">
+                    <div class="tab-header">
+                        <h1>Tìm Kiếm & Quản Lý Repository</h1>
+                        <p>Tra cứu danh sách repo và xóa khi cần thiết</p>
+                    </div>
+
+                    <div class="search-bar-container" style="display: flex; gap: 10px; align-items: center; width: 100%; margin-bottom: 20px;">
+                        <input type="text" id="search-query" placeholder="Tìm kiếm repo..." onkeyup="handleSearchKeyUp(event)" style="flex-grow: 1; min-width: 0; height: 42px; margin-bottom: 0;">
+                        
+                        <select id="search-sort" class="select-input" onchange="searchRepositories(0)">
+                            <option value="default">Mặc định</option>
+                            <option value="empty">Trống lên đầu</option>
+                            <option value="new">Mới lên đầu</option>
+                        </select>
+                        
+                        <button class="btn-primary" id="btn-search-action" onclick="handleSearchAction()" style="flex-shrink: 0; width: 110px; height: 42px; font-size: 13px; padding: 0 15px; display: inline-flex; align-items: center; justify-content: center;">Tìm kiếm</button>
+                    </div>
+
+                    <div id="repo-list-container" class="repo-list-grid">
+                        <!-- Cards will be rendered here -->
+                    </div>
+
+                    <div class="pagination-container" id="pagination-controls" style="display: none;">
+                        <button class="btn-secondary" id="btn-prev-page" onclick="prevSearchPage()">Trang trước</button>
+                        <span id="page-info">Trang 1 / 1 (0 repo)</span>
+                        <button class="btn-secondary" id="btn-next-page" onclick="nextSearchPage()">Trang sau</button>
+                    </div>
                 </div>
 
-                <div class="search-bar-container">
-                    <input type="text" id="search-query" placeholder="Nhập từ khóa tìm kiếm repo..." onkeyup="handleSearchKeyUp(event)">
-                    <button class="btn-primary" onclick="searchRepositories()">Tìm kiếm</button>
-                </div>
+                <!-- CHI TIẾT REPOSITORY -->
+                <div id="repo-detail-view" style="display: none;">
+                    <div class="detail-header-bar">
+                        <button class="btn-secondary" id="btn-back-to-list" onclick="hideRepoDetail()">
+                            <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 6px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                            </svg>
+                            Quay lại
+                        </button>
+                        <div class="repo-meta-header" style="display: flex; align-items: center; gap: 12px; margin-left: 15px;">
+                            <span class="repo-detail-name" id="detail-repo-name" style="font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 700; color: var(--text-primary);">owner/repo</span>
+                            <span class="repo-tag" id="detail-repo-visibility" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(56, 189, 248, 0.1); color: var(--accent-blue); border: 1px solid rgba(56, 189, 248, 0.2); text-transform: uppercase;">Public</span>
+                        </div>
+                    </div>
 
-                <div id="repo-list-container" class="repo-list-grid">
-                    <!-- Cards will be rendered here -->
-                </div>
+                    <div class="repo-detail-content-layout" style="display: grid; grid-template-columns: 280px 1fr; gap: 25px; align-items: start; margin-top: 20px;">
+                        <!-- Left pane: Metadata -->
+                        <div class="repo-detail-left">
+                            <div class="glass-card repo-metadata-card" style="padding: 20px;">
+                                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Thông tin kho lưu trữ</h3>
+                                <p id="detail-repo-desc" class="repo-desc" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 15px; word-break: break-word;">Mô tả kho lưu trữ...</p>
+                                <div class="detail-stats-row" style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">
+                                    <span id="detail-repo-stars">⭐ 0 stars</span>
+                                    <span id="detail-repo-forks">🍴 0 forks</span>
+                                </div>
+                                <div class="detail-stats-row" style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">
+                                    <span id="detail-repo-watchers">👁 0 watchers</span>
+                                    <span id="detail-repo-size">📦 0 KB</span>
+                                </div>
+                                <div class="detail-stats-row second" style="border-top: 1px solid var(--panel-border); padding-top: 10px; margin-top: 10px; font-size: 13px; color: var(--text-secondary);">
+                                    <span id="detail-repo-lang">🌐 Ngôn ngữ: None</span>
+                                </div>
+                                <button class="btn-primary" id="btn-open-in-github" style="margin-top: 15px; width: 100%; font-size: 13px; padding: 10px;">Mở trên GitHub</button>
+                            </div>
+                        </div>
 
-                <div class="pagination-container" id="pagination-controls" style="display: none;">
-                    <button class="btn-secondary" id="btn-prev-page" onclick="prevSearchPage()">Trang trước</button>
-                    <span id="page-info">Trang 1 / 1 (0 repo)</span>
-                    <button class="btn-secondary" id="btn-next-page" onclick="nextSearchPage()">Trang sau</button>
+                        <!-- Right pane: Files & README (Looks like real GitHub!) -->
+                        <div class="repo-detail-right" style="display: flex; flex-direction: column; gap: 20px;">
+                            <div class="github-tabs" style="display: flex; gap: 5px; border-bottom: 1px solid var(--panel-border); padding-bottom: 5px;">
+                                <button class="github-tab-btn active" style="background: transparent; border: none; color: var(--accent-blue); border-bottom: 2px solid var(--accent-blue); padding: 8px 16px; font-size: 13.5px; font-weight: 600; cursor: pointer;">Code</button>
+                            </div>
+                            
+                            <!-- File Explorer -->
+                            <div class="glass-card file-explorer-card" style="padding: 0; overflow: hidden; border-radius: 12px;">
+                                <div class="explorer-header" style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--panel-border); padding: 12px 20px; font-family: 'Fira Code', monospace; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between;">
+                                    <span class="current-path" id="explorer-current-path">root</span>
+                                </div>
+                                <div class="explorer-body">
+                                    <table class="files-table" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid var(--panel-border);">
+                                                <th style="color: var(--text-muted); font-weight: 600; padding: 10px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Tên</th>
+                                                <th style="color: var(--text-muted); font-weight: 600; padding: 10px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Loại</th>
+                                                <th style="color: var(--text-muted); font-weight: 600; padding: 10px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Dung lượng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="files-table-body">
+                                            <!-- Files list will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- README -->
+                            <div class="glass-card readme-card" id="detail-readme-container" style="padding: 0; overflow: hidden; border-radius: 12px;">
+                                <div class="readme-header" style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--panel-border); padding: 12px 20px; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
+                                    <svg class="readme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; color: var(--text-secondary);">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                                    </svg>
+                                    <span>README.md</span>
+                                </div>
+                                <div class="readme-content" id="detail-readme-content" style="padding: 20px; font-size: 13.5px; line-height: 1.6; color: var(--text-primary); user-select: text;">
+                                    <!-- Rendered HTML will go here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -205,18 +378,84 @@
 
                     <div class="input-grid">
                         <div class="input-group">
+                            <label for="setting-commit-name">Tên Author Git Commit (Tùy chọn)</label>
+                            <input type="text" id="setting-commit-name" placeholder="Mặc định là GitHub Username...">
+                        </div>
+                        <div class="input-group">
+                            <label for="setting-commit-email">Email Author Git Commit (Tùy chọn)</label>
+                            <input type="email" id="setting-commit-email" placeholder="Mặc định là username@users.noreply.github.com...">
+                        </div>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="setting-repo-private">Trạng thái Repo mặc định khi tạo mới</label>
+                            <select id="setting-repo-private" class="select-input">
+                                <option value="false">Công khai (Public)</option>
+                                <option value="true">Riêng tư (Private)</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="justify-content: center; align-items: flex-start;">
+                            <label class="switch-container" style="margin-top: 25px;">
+                                <input type="checkbox" id="setting-auto-push">
+                                <span class="switch-slider"></span>
+                                <span class="switch-label">Tự động push sau khi chọn thư mục</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="input-group">
                             <label for="setting-theme">Giao diện (Theme)</label>
-                            <select id="setting-theme" class="select-input">
+                            <select id="setting-theme" class="select-input" onchange="onThemeChange()">
                                 <option value="dark">Tối (Dark Mode)</option>
                                 <option value="light">Sáng (Light Mode)</option>
                                 <option value="system">Hệ thống (System Theme)</option>
                             </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="setting-default-commit-msg">Commit Message Mặc định</label>
+                            <input type="text" id="setting-default-commit-msg" placeholder="init">
                         </div>
                     </div>
 
                     <div class="settings-actions">
                         <button class="btn-primary" onclick="saveSettings()">Lưu cài đặt</button>
                         <span id="settings-status-msg" class="status-message"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB REPORT -->
+            <section id="report-tab" class="tab-content">
+                <div class="tab-header">
+                    <h1>Báo Cáo & Chẩn Đoán GitHub</h1>
+                    <p>Phân tích quyền hạn của token, giới hạn API và thông tin tài khoản</p>
+                </div>
+                <div class="report-container">
+                    <div id="report-loading" style="display: none; text-align: center; color: var(--text-secondary); padding: 40px; font-size: 14px;">
+                        Đang chẩn đoán token GitHub và tải báo cáo...
+                    </div>
+                    <div id="report-data" class="report-grid" style="display: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <!-- Diagnostic Cards will be populated here -->
+                    </div>
+            </section>
+
+            <!-- TAB GUIDE (Cách hoạt động) -->
+            <section id="guide-tab" class="tab-content">
+                <div class="tab-header">
+                    <h1>Hướng Dẫn Sử Dụng & Cách Hoạt Động</h1>
+                    <p>Tài liệu hướng dẫn tiếng Việt chi tiết cho công cụ G-GitUpload</p>
+                </div>
+                <div class="glass-card guide-container" style="padding: 0; overflow: hidden; border-radius: 12px;">
+                    <div class="guide-header" style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--panel-border); padding: 12px 20px; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
+                        <svg class="readme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; color: var(--text-secondary);">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                        </svg>
+                        <span>Văn bản hướng dẫn: HUONG_DAN.txt</span>
+                    </div>
+                    <div id="guide-tab-content" style="padding: 20px 24px;">
+                        Đang tải tài liệu hướng dẫn...
                     </div>
                 </div>
             </section>
@@ -240,6 +479,32 @@
                 <button class="btn-primary" id="success-modal-copy-btn">Copy Link</button>
                 <button class="btn-secondary" id="success-modal-open-btn">Mở trình duyệt</button>
                 <button class="btn-secondary" id="success-modal-close-btn" onclick="closeSuccessModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirm-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content glass-card" style="max-width: 420px; text-align: left;">
+            <div class="modal-header" style="align-items: center; flex-direction: row; gap: 12px; margin-bottom: 15px;">
+                <svg class="toast-icon error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 28px; height: 28px; filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.2));">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary);">Xác nhận xóa Repository</h3>
+            </div>
+            <div class="modal-body" style="margin-bottom: 20px;">
+                <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5;">
+                    Bạn đang thực hiện xóa repository <strong id="delete-confirm-repo-name" style="color: var(--accent-red);">[repo-name]</strong> khỏi GitHub. Thao tác này KHÔNG thể hoàn tác.
+                </p>
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 8px;">Nhập Delete Key xác nhận:</label>
+                <div class="password-input-container">
+                    <input type="password" id="delete-confirm-input" placeholder="Khóa xác nhận xóa repo..." style="width: 100%; height: 40px; margin-bottom: 0;">
+                    <button type="button" class="btn-toggle-visibility" onclick="toggleDeleteConfirmVisibility()" style="top: 2px; bottom: 2px; height: 36px;">👁</button>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: flex-end; gap: 10px;">
+                <button class="btn-secondary" onclick="closeDeleteConfirmModal()" style="padding: 8px 16px; font-size: 13px;">Hủy bỏ</button>
+                <button class="btn-danger" id="btn-confirm-delete-action" style="padding: 8px 16px; font-size: 13px;">Xác nhận xóa</button>
             </div>
         </div>
     </div>

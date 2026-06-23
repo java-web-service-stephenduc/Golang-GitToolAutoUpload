@@ -15,6 +15,11 @@ type AppConfig struct {
 	NamingPattern  string `json:"naming_pattern"`
 	DeleteKey      string `json:"delete_key"`
 	ThemeMode      string `json:"theme_mode"`
+	GitCommitName  string `json:"git_commit_name"`
+	GitCommitEmail string `json:"git_commit_email"`
+	RepoPrivate    bool   `json:"repo_private"`
+	AutoPush       bool   `json:"auto_push"`
+	DefaultCommitMsg string `json:"default_commit_msg"`
 }
 
 func (c *AppConfig) HasOrganization() bool {
@@ -49,6 +54,9 @@ func LoadConfig() (*AppConfig, error) {
 	}
 	if cfg.ThemeMode == "" {
 		cfg.ThemeMode = "dark"
+	}
+	if cfg.DefaultCommitMsg == "" {
+		cfg.DefaultCommitMsg = "init"
 	}
 	return &cfg, nil
 }

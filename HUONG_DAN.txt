@@ -1,0 +1,93 @@
+# HƯỚNG DẪN SỬ DỤNG G-GITUPLOAD
+
+Chào mừng bạn đến với G-GitUpload, công cụ hỗ trợ quản lý và tự động hóa quy trình đẩy (push) cũng như sao chép (clone) repository GitHub của học viên một cách nhanh chóng và tối ưu nhất!
+
+---
+
+## 1. CÁCH LẤY THÔNG TIN CÁ NHÂN GITHUB
+
+Để sử dụng các tính năng tự động hóa của công cụ, bạn cần có thông tin tài khoản GitHub và mã token xác thực (Personal Access Token - PAT).
+
+### Bước 1: Lấy GitHub Username
+- Đây là tên đăng nhập hoặc tên hiển thị trên đường dẫn trang cá nhân của bạn (ví dụ: `https://github.com/ten-cua-ban` -> username của bạn là `ten-cua-ban`).
+
+### Bước 2: Tạo GitHub Personal Access Token (PAT)
+1. Đăng nhập vào tài khoản [GitHub](https://github.com).
+2. Vào **Settings** (Cài đặt) cá nhân của bạn bằng cách click vào avatar ở góc trên cùng bên phải -> chọn **Settings**.
+3. Cuộn xuống menu bên trái và chọn **Developer settings** ở gần cuối.
+4. Chọn mục **Personal access tokens** -> **Tokens (classic)**.
+5. Click vào nút **Generate new token** -> chọn **Generate new token (classic)**.
+6. Điền thông tin vào các trường:
+   - **Note**: Nhập tên gợi nhớ (ví dụ: `G-GitUpload-Token`).
+   - **Expiration**: Chọn thời hạn sử dụng tùy ý (ví dụ: 30 days hoặc No expiration).
+   - **Select scopes**: Tích chọn ít nhất các quyền quan trọng sau:
+     - `repo` (Bắt buộc - dùng để tạo, đọc, ghi và quản lý repo công khai/riêng tư).
+     - `delete_repo` (Cần thiết - nếu bạn muốn sử dụng tính năng Xóa repository trực tiếp trên ứng dụng).
+     - `admin:org` / `write:org` (Tùy chọn - nếu bạn muốn tải bài tập lên tài khoản tổ chức/Organization).
+7. Cuộn xuống cuối trang và click **Generate token**.
+8. **QUAN TRỌNG**: Sao chép mã token vừa được tạo (dạng `ghp_xxxxxxxxxxxx`) và lưu lại ở nơi an toàn. Mã này chỉ hiển thị một lần duy nhất!
+
+---
+
+## 2. CÁCH NHẬP CẤU HÌNH TRÊN TAB CÀI ĐẶT
+
+Sau khi mở phần mềm G-GitUpload, hãy di chuyển tới tab **Cài đặt** (Settings) ở cuối menu sidebar và điền các thông tin sau:
+
+1. **GitHub Personal Access Token (PAT)**: Dán mã token `ghp_xxxxxxxxxxxx` vừa lấy ở phần 1 vào đây.
+2. **GitHub Username**: Điền username tài khoản GitHub của bạn.
+3. **GitHub Organization Name (Tùy chọn)**: Nếu bạn nộp bài tập cho một Tổ chức (Org) của lớp học, hãy điền tên Org vào đây. Nếu nộp vào tài khoản cá nhân của mình, hãy ĐỂ TRỐNG mục này.
+4. **Naming Pattern (Mẫu đặt tên mặc định)**: Mẫu cấu trúc đặt tên cho repo được tạo mới. Mặc định là `session%s-ex%s-homework` (tương ứng với cấu trúc buổi học và số bài tập).
+5. **Delete Repository Key (Khóa xác nhận xóa)**: Nhập một chuỗi ký tự mật khẩu bất kỳ do bạn tự chọn. Khóa này dùng để nhập xác thực mỗi khi bạn muốn thực hiện chức năng xóa repository, tránh trường hợp click nhầm gây mất mát dữ liệu trên GitHub.
+6. **Tên & Email Author Git Commit (Tùy chọn)**: Thông tin định danh tác giả khi commit code. Nếu để trống sẽ sử dụng thông tin mặc định theo tài khoản của bạn.
+7. **Trạng thái Repo mặc định**: Chọn chế độ **Công khai (Public)** hoặc **Riêng tư (Private)** khi phần mềm tạo repo tự động.
+8. **Tự động push sau khi chọn thư mục**: Nếu được bật, ngay khi bạn kéo thả hoặc chọn thư mục bài tập thành công, ứng dụng sẽ lập tức chạy tiến trình đẩy code mà không cần bạn bấm nút "Bắt đầu Push".
+9. **Commit Message Mặc định**: Điền thông điệp commit mặc định cho lần đẩy code đầu tiên (mặc định ban đầu là `init`).
+10. Chọn theme giao diện phù hợp (Tối, Sáng hoặc đồng bộ Hệ thống) và nhấn **Lưu cài đặt**. Khi lưu thành công, bạn sẽ thấy avatar và thông tin cá nhân xuất hiện ở góc trái bên dưới sidebar.
+
+---
+
+## 3. CÁC TAB CHỨC NĂNG CỦA ỨNG DỤNG
+
+Giao diện sidebar được sắp xếp theo đúng quy trình hành vi tự nhiên của người học:
+
+### 3.1. Tab "Đẩy bài tập" (Upload Code)
+- **Mục đích**: Tự động hóa tạo repo trên GitHub và đẩy mã nguồn từ máy lên đám mây.
+- **Cách dùng**:
+  1. Kéo thả thư mục bài tập từ máy tính vào khung đứt nét hoặc click trực tiếp vào khung đó để chọn thư mục.
+  2. Chọn chế độ upload:
+     - *Session + Exercise*: Điền số buổi (Session) và số bài tập (Exercise) để tự đặt tên repo theo cấu trúc mẫu.
+     - *Session + Miniproject*: Điền số buổi và tên dự án nhỏ (ví dụ: `todo-app`).
+     - *Custom Repository*: Nhập tên repo tùy ý trực tiếp.
+  3. Chọn sử dụng commit message mặc định hoặc điền commit message tùy chỉnh.
+  4. Nhấn **Bắt đầu Push**. Xem tiến độ chạy trực tiếp trên thanh Progress và log chi tiết tại bảng Console. Bạn có thể nhấn nút **Hủy** bất kỳ lúc nào để dừng tiến trình an toàn.
+  5. Sau khi đẩy thành công, widget "Đẩy lên gần đây nhất" sẽ cập nhật thông tin và nút **Copy Link** giúp bạn lấy nhanh link nộp bài.
+
+### 3.2. Tab "Sao chép Repo" (Clone Repository)
+- **Mục đích**: Tải nhanh các repository từ GitHub về máy tính và tự động liên kết để mở với các IDE lập trình thông dụng.
+- **Cách dùng**:
+  1. Chọn nguồn clone:
+     - *Chọn từ danh sách GitHub*: Ứng dụng tự động load danh sách 100 repo mới nhất của bạn/tổ chức, chọn repo cần clone trong menu thả xuống.
+     - *Nhập link clone thủ công*: Dán liên kết HTTPS của repo cần tải về.
+  2. Click **Chọn thư mục** để chọn nơi lưu trữ trên máy tính của bạn.
+  3. Nhấn **Bắt đầu Clone** và theo dõi log tải ở console.
+  4. Khi hoàn thành, ứng dụng tự động kiểm tra hệ thống và hiện nút mở nhanh thư mục bài tập đó qua các IDE được phát hiện (như **VS Code**, **IntelliJ**, **Cursor**, **Antigravity**) hoặc mở thư mục trực tiếp bằng Windows Explorer.
+
+### 3.3. Tab "Tìm kiếm Repo" (Search & Manage Repositories)
+- **Mục đích**: Quản lý và tra cứu các repository đã tạo trên GitHub.
+- **Cách dùng**:
+  - Gõ từ khóa tìm kiếm và chọn tiêu chí sắp xếp: **Mặc định** (theo thời gian cập nhật), **Trống lên đầu** (để lọc nhanh các repo chưa đẩy code), hoặc **Mới lên đầu**.
+  - Kết quả trả về hiển thị nhãn trạng thái trực quan: **[EMPTY]** (repo trống chưa có code) và **[NEW]** (repo vừa push code trong vòng 24 giờ qua), cùng thông số ngôn ngữ lập trình chiếm tỷ lệ cao nhất.
+  - Bạn có thể **Copy Link**, xem **Chi tiết** (cấu trúc file explorer và đọc nội dung README.md trực tiếp trên ứng dụng), hoặc **Xóa** repository bằng cách nhập Delete Key qua modal xác nhận.
+
+### 3.4. Tab "Báo cáo GitHub" (Diagnostics & Diagnostics report)
+- **Mục đích**: Kiểm tra chuẩn đoán kết nối tài khoản.
+- **Cách dùng**:
+  - Tự động hiển thị phân tích các quyền hạn (Scopes) của token PAT hiện tại xem có đủ để đẩy hay xóa repo không.
+  - Hiển thị thông tin rate limit (giới hạn số lượng yêu cầu API) còn lại của tài khoản.
+  - Tổng hợp dung lượng đĩa đã sử dụng trên đám mây, số lượng repo public/private, và cấu hình bảo mật 2FA của bạn.
+
+### 3.5. Tab "Cách hoạt động" (User Guide)
+- **Mục đích**: Xem tài liệu hướng dẫn nhanh này ngay trên ứng dụng mà không cần mở tài liệu bên ngoài.
+- **Cách dùng**: Click trực tiếp vào tab để đọc hướng dẫn sử dụng tiếng Việt chi tiết với định dạng văn bản đẹp mắt, tự động cập nhật theo thời gian thực.
+
+Chúc bạn nộp bài tập và quản lý các repository dễ dàng hơn với G-GitUpload!
