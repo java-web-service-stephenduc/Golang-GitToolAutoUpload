@@ -1,5 +1,5 @@
 // Search service
-import { SearchRepos, DeleteRepo, GetRepoContents, GetRepoReadme, OpenBrowser, GetRepoFile, UpdateRepoFile, GetRepoLanguages } from '../../wailsjs/go/main/App';
+import { SearchRepos, DeleteRepo, GetRepoContents, GetRepoReadme, OpenBrowser, GetRepoFile, UpdateRepoFile, GetRepoLanguages, GetTokenReport } from '../../wailsjs/go/main/App';
 import { createRepoCard } from '../components/RepoCard.js';
 import { showToast } from '../components/Toast.js';
 import { appendConsoleLog } from '../components/Console.js';
@@ -92,10 +92,16 @@ export function enterRepoDetail(repo) {
   document.getElementById('detail-repo-visibility').innerText = repo.private ? 'Private' : 'Public';
   document.getElementById('detail-repo-visibility').className = repo.private ? 'repo-tag private-tag' : 'repo-tag';
   document.getElementById('detail-repo-desc').innerText = repo.description || 'Không có mô tả.';
-  document.getElementById('detail-repo-stars').innerText = `⭐ ${repo.stargazers_count || 0} stars`;
-  document.getElementById('detail-repo-forks').innerText = `🍴 ${repo.forks_count || 0} forks`;
-  document.getElementById('detail-repo-watchers').innerText = `👁 ${repo.watchers_count || 0} watchers`;
-  document.getElementById('detail-repo-size').innerText = `📦 ${formatBytes(repo.size * 1024)}`;
+  
+  // Set innerText of nested spans to keep Lucide icons intact
+  document.getElementById('detail-repo-stars').querySelector('span').innerText = `${repo.stargazers_count || 0} stars`;
+  document.getElementById('detail-repo-forks').querySelector('span').innerText = `${repo.forks_count || 0} forks`;
+  document.getElementById('detail-repo-watchers').querySelector('span').innerText = `${repo.watchers_count || 0} watchers`;
+  document.getElementById('detail-repo-size').querySelector('span').innerText = `${formatBytes(repo.size * 1024)}`;
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 
   document.getElementById('btn-open-in-github').onclick = () => OpenBrowser(repo.html_url);
 
@@ -199,32 +205,27 @@ async function loadRepoReadme() {
 
 // --- Delete ---
 export async function confirmAndDeleteRepo(name) {
-  if (!window.__cachedDeleteKey) {
-    showToast('Chưa thiết lập Delete Key trong mục Cài đặt!', 'error');
-    window.switchTab('settings-tab');
-    return;
-  }
-
   const modal = document.getElementById('delete-confirm-modal');
   document.getElementById('delete-confirm-repo-name').innerText = name;
-  document.getElementById('delete-confirm-input').value = '';
   modal.style.display = 'flex';
-  document.getElementById('delete-confirm-input').focus();
 
   document.getElementById('btn-confirm-delete-action').onclick = async () => {
-    const enteredKey = document.getElementById('delete-confirm-input').value;
-    if (enteredKey.trim() !== window.__cachedDeleteKey.trim()) {
-      showToast('Delete Key không khớp! Không thể xóa repository.', 'error');
-      return;
-    }
     modal.style.display = 'none';
     try {
+      appendConsoleLog(`Đang kiểm tra quyền hạn GitHub Token...`, 'info');
+      const report = await GetTokenReport();
+      if (!report.has_delete_scope) {
+        showToast(`Không thể xóa: Token của bạn không có quyền 'delete_repo'. Vui lòng kiểm tra lại cấu hình tài khoản GitHub.`, 'error');
+        appendConsoleLog(`Xóa thất bại: Thiếu quyền 'delete_repo' trong GitHub Token.`, 'error');
+        return;
+      }
+
       appendConsoleLog(`Đang gửi yêu cầu xóa repository: ${name}...`, 'info');
       await DeleteRepo(name);
       showToast(`Đã xóa thành công repository '${name}' khỏi GitHub.`, 'success');
       searchRepositories(searchCurrentPage);
     } catch (err) {
-      showToast(`Xóa repository thất bại: ${err}`, 'error');
+      showToast(`Xóa repository thất bại: ${err.message || err}`, 'error');
     }
   };
 }

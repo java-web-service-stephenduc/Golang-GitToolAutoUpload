@@ -56,6 +56,11 @@ export async function startCloneProcess() {
   clearCloneConsole();
   document.getElementById('clone-success-ide-actions').style.display = 'none';
 
+  try {
+    const { clearPendingError } = await import('./ChatService.js');
+    clearPendingError();
+  } catch (err) {}
+
   const sourceType = cloneSourceType;
   let repoURL = sourceType === 'github'
     ? document.getElementById('clone-repo-select').value

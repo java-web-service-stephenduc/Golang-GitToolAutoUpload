@@ -1815,8 +1815,8 @@ body.light-theme .segment-btn:hover:not(.active) {
 
 .chat-toggle-fab {
     position: relative;
-    width: 56px;
-    height: 56px;
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--accent-purple), #6366f1);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2272,4 +2272,87 @@ body.light-theme .quick-action-btn:hover {
     background: rgba(99, 102, 241, 0.1);
     border-color: rgba(99, 102, 241, 0.25);
 }
+
+/* Chat link rendering */
+.chat-link {
+    color: #3b82f6 !important;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    transition: color 0.2s ease;
+}
+
+.chat-link:hover {
+    color: #60a5fa !important;
+}
+
+body.light-theme .chat-link {
+    color: #2563eb !important;
+}
+
+body.light-theme .chat-link:hover {
+    color: #1d4ed8 !important;
+}
+
+/* Copy button wrapper on user message */
+.chat-msg-content-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-end;
+}
+
+.chat-copy-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-copy-btn:hover {
+    color: var(--accent-blue);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.chat-msg-content-wrapper:hover .chat-copy-btn {
+    opacity: 1;
+}
+
+.chat-copy-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Clear chat button header style */
+.chat-clear-btn {
+    background: transparent;
+    border: none;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chat-clear-btn:hover {
+    color: var(--accent-red) !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.chat-clear-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
 

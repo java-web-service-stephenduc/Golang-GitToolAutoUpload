@@ -274,13 +274,21 @@
                                     <i data-lucide="info" style="width: 16px; height: 16px; color: var(--accent-purple);"></i> Thông tin kho lưu trữ
                                 </h3>
                                 <p id="detail-repo-desc" class="repo-desc">Mô tả kho lưu trữ...</p>
-                                <div class="detail-stats-row">
-                                    <span id="detail-repo-stars">⭐ 0 stars</span>
-                                    <span id="detail-repo-forks">🍴 0 forks</span>
+                                <div class="detail-stats-row" style="display: flex; gap: 15px; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary);">
+                                    <span id="detail-repo-stars" style="display: flex; align-items: center; gap: 4px;">
+                                        <i data-lucide="star" style="width: 14px; height: 14px; color: #eab308;"></i> <span>0 stars</span>
+                                    </span>
+                                    <span id="detail-repo-forks" style="display: flex; align-items: center; gap: 4px;">
+                                        <i data-lucide="git-fork" style="width: 14px; height: 14px; color: var(--text-secondary);"></i> <span>0 forks</span>
+                                    </span>
                                 </div>
-                                <div class="detail-stats-row">
-                                    <span id="detail-repo-watchers">👁 0 watchers</span>
-                                    <span id="detail-repo-size">📦 0 KB</span>
+                                <div class="detail-stats-row" style="display: flex; gap: 15px; margin-bottom: 12px; font-size: 13px; color: var(--text-secondary);">
+                                    <span id="detail-repo-watchers" style="display: flex; align-items: center; gap: 4px;">
+                                        <i data-lucide="eye" style="width: 14px; height: 14px; color: var(--text-secondary);"></i> <span>0 watchers</span>
+                                    </span>
+                                    <span id="detail-repo-size" style="display: flex; align-items: center; gap: 4px;">
+                                        <i data-lucide="database" style="width: 14px; height: 14px; color: var(--text-secondary);"></i> <span>0 KB</span>
+                                    </span>
                                 </div>
                                 
                                 <div class="detail-languages-section" style="border-top: 1px solid var(--panel-border); padding-top: 12px; margin-top: 12px;">
@@ -391,7 +399,7 @@
                             <label for="setting-pattern">Naming Pattern</label>
                             <input type="text" id="setting-pattern" placeholder="session%s-ex%s-homework">
                         </div>
-                        <div class="input-group">
+                        <div class="input-group" style="display: none;">
                             <label for="setting-delete-key">Delete Repository Key</label>
                             <div class="password-input-container">
                                 <input type="password" id="setting-delete-key" placeholder="Khóa xác nhận xóa repo...">
@@ -444,9 +452,28 @@
                     </div>
 
                     <div class="settings-section-divider"></div>
-                    <h3 class="settings-subtitle">Trợ lý AI</h3>
+                    <h3 class="settings-subtitle">Cài đặt Trợ lý</h3>
 
+                    <!-- Toggles for Bot Chat & Voice Chat -->
                     <div class="input-grid">
+                        <div class="input-group" style="justify-content: center; align-items: flex-start;">
+                            <label class="switch-container" style="margin-top: 15px;">
+                                <input type="checkbox" id="setting-bot-chat-enabled" onchange="onBotChatToggle()">
+                                <span class="switch-slider"></span>
+                                <span class="switch-label">Kích hoạt Trợ lý Stephen AI (Bong bóng chat)</span>
+                            </label>
+                        </div>
+                        <div class="input-group" style="justify-content: center; align-items: flex-start;">
+                            <label class="switch-container" style="margin-top: 15px;">
+                                <input type="checkbox" id="setting-voice-chat-enabled" onchange="onVoiceChatToggle()">
+                                <span class="switch-slider"></span>
+                                <span class="switch-label">Kích hoạt Trợ lý Giọng nói (Microphone)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Hidden AI Key and Model inputs -->
+                    <div class="input-grid" style="display: none;">
                         <div class="input-group">
                             <label for="setting-ai-key">AI API Key (OpenRouter)</label>
                             <div class="password-input-container">
@@ -531,11 +558,9 @@
                 <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5;">
                     Bạn đang thực hiện xóa repository <strong id="delete-confirm-repo-name" style="color: var(--accent-red);">[repo-name]</strong> khỏi GitHub. Thao tác này KHÔNG thể hoàn tác.
                 </p>
-                <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 8px;">Nhập Delete Key xác nhận:</label>
-                <div class="password-input-container">
-                    <input type="password" id="delete-confirm-input" placeholder="Khóa xác nhận xóa repo..." style="width: 100%; height: 40px; margin-bottom: 0;">
-                    <button type="button" class="btn-toggle-visibility" onclick="toggleDeleteConfirmVisibility()" style="top: 2px; bottom: 2px; height: 36px;">👁</button>
-                </div>
+                <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">
+                    Ứng dụng sẽ thực hiện gửi yêu cầu xóa repository trực tiếp bằng tài khoản GitHub cấu hình của bạn. Hãy đảm bảo tài khoản/token có quyền \`delete_repo\`.
+                </p>
             </div>
             <div class="modal-footer" style="justify-content: flex-end; gap: 10px;">
                 <button class="btn-secondary" onclick="closeDeleteConfirmModal()" style="padding: 8px 16px; font-size: 13px;">Hủy bỏ</button>
@@ -551,15 +576,20 @@
         <div class="chat-resizer" id="chatResizer"></div>
         <div class="chat-header">
             <div class="chat-header-info">
-                <img src="./src/assets/images/ai-logo.png" class="chat-header-logo" alt="AI" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
-                <span>Trợ lý G-GitUpload</span>
+                <img src="./src/assets/images/ai-logo.png" class="chat-header-logo" alt="AI" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                <span>Trợ lý Stephen</span>
             </div>
-            <button class="chat-close-btn" onclick="toggleChatPanel()">&times;</button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="chat-clear-btn" onclick="clearChatHistory()" title="Xóa lịch sử chat" style="background: transparent; border: none; padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                </button>
+                <button class="chat-close-btn" onclick="toggleChatPanel()">&times;</button>
+            </div>
         </div>
         <div class="chat-messages" id="chatMessages">
             <div class="chat-msg assistant">
-                <div class="chat-msg-label">AI</div>
-                <div class="chat-msg-content">Chào bạn! Tôi là trợ lý G-GitUpload. Bạn có thể chọn nhanh một câu hỏi bên dưới hoặc tự nhập câu hỏi:</div>
+                <div class="chat-msg-label">Stephen</div>
+                <div class="chat-msg-content">Chào bạn! Tôi là Stephen - trợ lý của G-GitUpload. Bạn có thể chọn nhanh một câu hỏi bên dưới hoặc tự nhập câu hỏi:</div>
                 <div class="chat-quick-actions">
                     <button class="quick-action-btn" onclick="sendQuickQuery('Xem hướng dẫn sử dụng')">📖 Hướng dẫn sử dụng</button>
                     <button class="quick-action-btn" onclick="sendQuickQuery('Cách push bài tập lên GitHub')">🚀 Cách push bài tập</button>
@@ -581,7 +611,9 @@
     <div class="chat-fab-container" id="chatFabContainer">
         <button class="chat-toggle-fab" id="chatToggleBtn" style="cursor: grab; overflow: hidden; padding: 0;">
             <img src="./src/assets/images/ai-logo.png" class="chat-fab-logo" id="chatFabLogo" alt="AI" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; pointer-events: none;">
-            <div class="chat-fab-badge" id="chatFabBadge" style="display: none;">!</div>
+            <div class="chat-fab-badge" id="chatFabBadge" style="display: none; width: 22px; height: 22px; border-radius: 50%; justify-content: center; align-items: center;">
+                <i data-lucide="alert-circle" style="width: 14px; height: 14px; stroke-width: 2.5;"></i>
+            </div>
         </button>
         <div class="chat-fab-tooltip" id="chatFabTooltip" style="display: none;">Phát hiện lỗi! Nhấp để Stephen chẩn đoán</div>
     </div>

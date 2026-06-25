@@ -12,8 +12,15 @@ import { setupChatInput } from './services/ChatService.js';
 import { OpenBrowser } from '../wailsjs/go/main/App';
 import './services/VoiceService.js';
 
-// Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', async () => {
+  // Apply assistant toggles immediately to avoid UI flashing
+  const botChatEnabled = localStorage.getItem('bot_chat_enabled') !== 'false';
+  const voiceChatEnabled = localStorage.getItem('voice_chat_enabled') !== 'false';
+  const fab = document.getElementById('chatFabContainer');
+  if (fab) fab.style.display = botChatEnabled ? 'flex' : 'none';
+  const voiceBtn = document.getElementById('voiceToggleBtn');
+  if (voiceBtn) voiceBtn.style.display = voiceChatEnabled ? 'flex' : 'none';
+
   await loadSettings();
   await loadLastPushedRepo();
   setupDragAndDrop();

@@ -37,7 +37,7 @@ Sau khi mở phần mềm G-GitUpload, hãy di chuyển tới tab **Cài đặt*
 2. **GitHub Username**: Điền username tài khoản GitHub của bạn.
 3. **GitHub Organization Name (Tùy chọn)**: Nếu bạn nộp bài tập cho một Tổ chức (Org) của lớp học, hãy điền tên Org vào đây. Nếu nộp vào tài khoản cá nhân của mình, hãy ĐỂ TRỐNG mục này.
 4. **Naming Pattern (Mẫu đặt tên mặc định)**: Mẫu cấu trúc đặt tên cho repo được tạo mới. Mặc định là `session%s-ex%s-homework` (tương ứng với cấu trúc buổi học và số bài tập).
-5. **Delete Repository Key (Khóa xác nhận xóa)**: Nhập một chuỗi ký tự mật khẩu bất kỳ do bạn tự chọn. Khóa này dùng để nhập xác thực mỗi khi bạn muốn thực hiện chức năng xóa repository, tránh trường hợp click nhầm gây mất mát dữ liệu trên GitHub.
+5. **Xác nhận xóa Repository**: Tính năng xóa repository không yêu cầu nhập khóa xác nhận. Khi thực hiện xóa, một hộp thoại modal sẽ xuất hiện để bạn xác nhận trực tiếp. Bạn cần đảm bảo GitHub Token đã được cấp quyền 'delete_repo'.
 6. **Tên & Email Author Git Commit (Tùy chọn)**: Thông tin định danh tác giả khi commit code. Nếu để trống sẽ sử dụng thông tin mặc định theo tài khoản của bạn.
 7. **Trạng thái Repo mặc định**: Chọn chế độ **Công khai (Public)** hoặc **Riêng tư (Private)** khi phần mềm tạo repo tự động.
 8. **Tự động push sau khi chọn thư mục**: Nếu được bật, ngay khi bạn kéo thả hoặc chọn thư mục bài tập thành công, ứng dụng sẽ lập tức chạy tiến trình đẩy code mà không cần bạn bấm nút "Bắt đầu Push".

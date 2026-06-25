@@ -6,6 +6,17 @@ let currentTheme = 'dark';
 
 export { currentTheme };
 
+export function applyAssistantToggles(botChat, voiceChat) {
+  const fab = document.getElementById('chatFabContainer');
+  if (fab) {
+    fab.style.display = botChat ? 'flex' : 'none';
+  }
+  const voiceBtn = document.getElementById('voiceToggleBtn');
+  if (voiceBtn) {
+    voiceBtn.style.display = voiceChat ? 'flex' : 'none';
+  }
+}
+
 export async function loadSettings() {
   try {
     const cfg = await GetSettings();
@@ -21,13 +32,23 @@ export async function loadSettings() {
       document.getElementById('setting-repo-private').value = cfg.repo_private ? 'true' : 'false';
       document.getElementById('setting-auto-push').checked = cfg.auto_push || false;
       document.getElementById('setting-default-commit-msg').value = cfg.default_commit_msg || 'init';
-      document.getElementById('setting-ai-key').value = cfg.ai_api_key || '';
-      document.getElementById('setting-ai-model').value = cfg.ai_model || '';
+      
+      // Default to the provided OpenRouter API Key and Model Name if empty
+      document.getElementById('setting-ai-key').value = cfg.ai_api_key || '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';
+      document.getElementById('setting-ai-model').value = cfg.ai_model || 'openai/gpt-oss-120b:free';
+
+      // Load toggles from localStorage (default to true)
+      const botChatEnabled = localStorage.getItem('bot_chat_enabled') !== 'false';
+      const voiceChatEnabled = localStorage.getItem('voice_chat_enabled') !== 'false';
+      document.getElementById('setting-bot-chat-enabled').checked = botChatEnabled;
+      document.getElementById('setting-voice-chat-enabled').checked = voiceChatEnabled;
 
       window.__cachedDeleteKey = cfg.delete_key || '';
 
       applyThemeSetting(cfg.theme_mode || 'dark');
       checkConnectionStatus(cfg);
+      applyAssistantToggles(botChatEnabled, voiceChatEnabled);
+
       const { loadGitHubProfile } = await import('../components/ProfileCard.js');
       loadGitHubProfile();
       return cfg;
@@ -50,8 +71,14 @@ export async function saveSettings() {
   const repoPrivate = document.getElementById('setting-repo-private').value === 'true';
   const autoPush = document.getElementById('setting-auto-push').checked;
   const defaultCommitMsg = document.getElementById('setting-default-commit-msg').value.trim();
-  const aiKey = document.getElementById('setting-ai-key').value.trim();
-  const aiModel = document.getElementById('setting-ai-model').value.trim();
+  
+  // Use inputs or correct default values if empty
+  const aiKey = document.getElementById('setting-ai-key').value.trim() || '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';
+  const aiModel = document.getElementById('setting-ai-model').value.trim() || 'openai/gpt-oss-120b:free';
+
+  // Toggles
+  const botChat = document.getElementById('setting-bot-chat-enabled').checked;
+  const voiceChat = document.getElementById('setting-voice-chat-enabled').checked;
 
   if (!token || !username) {
     showSettingsMessage('Token và Username không được để trống.', false);
@@ -72,8 +99,14 @@ export async function saveSettings() {
       auto_push: autoPush,
       default_commit_msg: defaultCommitMsg || 'init',
       ai_api_key: aiKey,
-      ai_model: aiModel || 'openai/gpt-4o-mini:free',
+      ai_model: aiModel,
     });
+    
+    // Save toggles to localStorage
+    localStorage.setItem('bot_chat_enabled', botChat ? 'true' : 'false');
+    localStorage.setItem('voice_chat_enabled', voiceChat ? 'true' : 'false');
+    applyAssistantToggles(botChat, voiceChat);
+
     window.__cachedDeleteKey = deleteKey;
     applyThemeSetting(theme);
     checkConnectionStatus({ github_token: token, github_username: username, github_org_name: org });
@@ -163,4 +196,16 @@ window.toggleDeleteKeyVisibility = function () {
 window.toggleAiKeyVisibility = function () {
   const el = document.getElementById('setting-ai-key');
   el.type = el.type === 'password' ? 'text' : 'password';
+};
+
+window.onBotChatToggle = function () {
+  const checked = document.getElementById('setting-bot-chat-enabled').checked;
+  const fab = document.getElementById('chatFabContainer');
+  if (fab) fab.style.display = checked ? 'flex' : 'none';
+};
+
+window.onVoiceChatToggle = function () {
+  const checked = document.getElementById('setting-voice-chat-enabled').checked;
+  const voiceBtn = document.getElementById('voiceToggleBtn');
+  if (voiceBtn) voiceBtn.style.display = checked ? 'flex' : 'none';
 };

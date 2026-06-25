@@ -31,6 +31,11 @@ export async function startPushProcess() {
   clearConsole();
   lastSuccessUrl = '';
 
+  try {
+    const { clearPendingError } = await import('./ChatService.js');
+    clearPendingError();
+  } catch (err) {}
+
   if (!selectedFolderPath) {
     appendConsoleLog('Lỗi: Vui lòng chọn hoặc kéo thả thư mục chứa bài tập.', 'error');
     const { showToast } = await import('../components/Toast.js');
