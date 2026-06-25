@@ -11,6 +11,10 @@ export function DeleteRepo(arg1:string):Promise<void>;
 
 export function DetectIDEs():Promise<Array<main.IDEInfo>>;
 
+export function FindMatchingDirectory(arg1:number,arg2:number):Promise<string>;
+
+export function GetAppContext():Promise<main.AppContext>;
+
 export function GetGitHubProfile():Promise<github.GitHubProfile>;
 
 export function GetLastPushedRepo():Promise<history.PushedRepo>;
@@ -19,9 +23,15 @@ export function GetLocalGuideHTML():Promise<string>;
 
 export function GetMyRepos():Promise<Array<github.RepositoryInfo>>;
 
+export function GetRawGuideContent():Promise<string>;
+
 export function GetRepoContents(arg1:string,arg2:string):Promise<Array<github.ContentInfo>>;
 
+export function GetRepoFile(arg1:string,arg2:string):Promise<github.FileContentInfo>;
+
 export function GetRepoLanguageStats(arg1:string):Promise<string>;
+
+export function GetRepoLanguages(arg1:string):Promise<Record<string, number>>;
 
 export function GetRepoReadme(arg1:string):Promise<string>;
 
@@ -35,12 +45,18 @@ export function OpenDirectoryInExplorer(arg1:string):Promise<void>;
 
 export function OpenInIDE(arg1:string,arg2:string):Promise<void>;
 
+export function ProcessVoiceCommand(arg1:string):Promise<main.VoiceResult>;
+
 export function SaveSettings(arg1:config.AppConfig):Promise<void>;
 
 export function SearchRepos(arg1:string,arg2:number,arg3:number,arg4:string):Promise<main.SearchReposResponse>;
 
 export function SelectDirectory():Promise<string>;
 
+export function SendChatMessage(arg1:Array<main.ChatMessage>):Promise<main.ChatMessage>;
+
 export function StartClone(arg1:string,arg2:string):Promise<void>;
 
 export function StartPush(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:boolean,arg8:string):Promise<void>;
+
+export function UpdateRepoFile(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;

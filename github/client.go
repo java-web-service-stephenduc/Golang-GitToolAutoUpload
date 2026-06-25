@@ -655,3 +655,123 @@ func SearchRepositories(token, owner, query string, isOrg bool, page, pageSize i
 		return repos, totalCount, nil
 	}
 }
+
+// FileContentInfo đại diện cho tệp tin chi tiết với nội dung mã hóa Base64
+type FileContentInfo struct {
+	Name     string `json:"name"`
+	Path     string `json:"path"`
+	SHA      string `json:"sha"`
+	Size     int64  `json:"size"`
+	Content  string `json:"content"`
+	Encoding string `json:"encoding"`
+}
+
+// GetRepoFile lấy nội dung tệp tin chi tiết dưới dạng Base64 và thông tin SHA từ GitHub
+func GetRepoFile(owner, repoName, path, token string) (*FileContentInfo, error) {
+	path = strings.Trim(path, "/")
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/%s", owner, repoName, path)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("không thể kết nối đến GitHub API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("lấy nội dung file thất bại: %s (Status: %d)", extractErrorMessage(bodyBytes), resp.StatusCode)
+	}
+
+	var fileInfo FileContentInfo
+	if err := json.Unmarshal(bodyBytes, &fileInfo); err != nil {
+		return nil, err
+	}
+
+	return &fileInfo, nil
+}
+
+// updateFilePayload đại diện cho payload tải lên cập nhật file GitHub
+type updateFilePayload struct {
+	Message string `json:"message"`
+	Content string `json:"content"` // Base64 encoded
+	SHA     string `json:"sha"`
+}
+
+// UpdateRepoFile thực hiện commit ghi đè nội dung file lên GitHub
+func UpdateRepoFile(owner, repoName, path, contentBase64, sha, commitMsg, token string) error {
+	path = strings.Trim(path, "/")
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/%s", owner, repoName, path)
+
+	payload := updateFilePayload{
+		Message: commitMsg,
+		Content: contentBase64,
+		SHA:     sha,
+	}
+
+	jsonBytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("không thể kết nối đến GitHub API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("cập nhật file thất bại: %s (Status: %d)", extractErrorMessage(bodyBytes), resp.StatusCode)
+	}
+
+	return nil
+}
+
+// GetRepoLanguages lấy danh sách tất cả ngôn ngữ và dung lượng bytes sử dụng
+func GetRepoLanguages(owner, repoName, token string) (map[string]int, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/languages", owner, repoName)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("không thể kết nối đến GitHub API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("lấy danh sách ngôn ngữ thất bại: %s (Status: %d)", extractErrorMessage(bodyBytes), resp.StatusCode)
+	}
+
+	var languages map[string]int
+	if err := json.NewDecoder(resp.Body).Decode(&languages); err != nil {
+		return nil, err
+	}
+
+	return languages, nil
+}
+

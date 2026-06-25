@@ -14,6 +14,14 @@ export function DetectIDEs() {
   return window['go']['main']['App']['DetectIDEs']();
 }
 
+export function FindMatchingDirectory(arg1, arg2) {
+  return window['go']['main']['App']['FindMatchingDirectory'](arg1, arg2);
+}
+
+export function GetAppContext() {
+  return window['go']['main']['App']['GetAppContext']();
+}
+
 export function GetGitHubProfile() {
   return window['go']['main']['App']['GetGitHubProfile']();
 }
@@ -30,12 +38,24 @@ export function GetMyRepos() {
   return window['go']['main']['App']['GetMyRepos']();
 }
 
+export function GetRawGuideContent() {
+  return window['go']['main']['App']['GetRawGuideContent']();
+}
+
 export function GetRepoContents(arg1, arg2) {
   return window['go']['main']['App']['GetRepoContents'](arg1, arg2);
 }
 
+export function GetRepoFile(arg1, arg2) {
+  return window['go']['main']['App']['GetRepoFile'](arg1, arg2);
+}
+
 export function GetRepoLanguageStats(arg1) {
   return window['go']['main']['App']['GetRepoLanguageStats'](arg1);
+}
+
+export function GetRepoLanguages(arg1) {
+  return window['go']['main']['App']['GetRepoLanguages'](arg1);
 }
 
 export function GetRepoReadme(arg1) {
@@ -62,6 +82,10 @@ export function OpenInIDE(arg1, arg2) {
   return window['go']['main']['App']['OpenInIDE'](arg1, arg2);
 }
 
+export function ProcessVoiceCommand(arg1) {
+  return window['go']['main']['App']['ProcessVoiceCommand'](arg1);
+}
+
 export function SaveSettings(arg1) {
   return window['go']['main']['App']['SaveSettings'](arg1);
 }
@@ -74,10 +98,18 @@ export function SelectDirectory() {
   return window['go']['main']['App']['SelectDirectory']();
 }
 
+export function SendChatMessage(arg1) {
+  return window['go']['main']['App']['SendChatMessage'](arg1);
+}
+
 export function StartClone(arg1, arg2) {
   return window['go']['main']['App']['StartClone'](arg1, arg2);
 }
 
 export function StartPush(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
   return window['go']['main']['App']['StartPush'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+}
+
+export function UpdateRepoFile(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['UpdateRepoFile'](arg1, arg2, arg3, arg4, arg5);
 }

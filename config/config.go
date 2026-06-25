@@ -20,6 +20,8 @@ type AppConfig struct {
 	RepoPrivate    bool   `json:"repo_private"`
 	AutoPush       bool   `json:"auto_push"`
 	DefaultCommitMsg string `json:"default_commit_msg"`
+	AiApiKey       string `json:"ai_api_key"`
+	AiModel        string `json:"ai_model"`
 }
 
 func (c *AppConfig) HasOrganization() bool {
@@ -127,6 +129,10 @@ func loadFromEnv() (*AppConfig, error) {
 			cfg.NamingPattern = val
 		case "DELETE_REPOSITORY_KEY":
 			cfg.DeleteKey = val
+		case "AI_API_KEY":
+			cfg.AiApiKey = val
+		case "AI_MODEL":
+			cfg.AiModel = val
 		}
 	}
 

@@ -13,9 +13,7 @@
         <!-- Sidebar bên trái -->
         <aside class="sidebar">
             <div class="logo-area">
-                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-                </svg>
+                <i data-lucide="cloud-upload" class="logo-icon"></i>
                 <h2>G-GitUpload</h2>
             </div>
             <nav class="menu">
@@ -36,6 +34,12 @@
                 </div>
             </div>
 
+
+            <button class="voice-toggle-btn" id="voiceToggleBtn" onclick="toggleVoiceRecognition()">
+                <i data-lucide="mic" style="width: 18px; height: 18px;"></i>
+                <span>Trợ lý Giọng nói</span>
+            </button>
+
             <div class="status-footer">
                 <span class="status-dot red" id="status-dot"></span>
                 <span id="connection-status">Đang kết nối...</span>
@@ -53,9 +57,7 @@
 
                 <!-- Widget hiển thị repo gần nhất (Tính năng 2) -->
                 <div id="recent-push-widget" class="recent-push-card">
-                    <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <i data-lucide="clock" class="clock-icon"></i>
                     <div class="recent-text-container">
                         <span class="recent-title">Đẩy lên gần đây nhất:</span>
                         <span id="recent-repo-text" class="recent-val">Không có lịch sử đẩy bài gần đây.</span>
@@ -67,9 +69,7 @@
                 <!-- Vùng Drag & Drop -->
                 <div id="drop-zone" class="drop-zone">
                     <div class="drop-zone-content">
-                        <svg class="folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.31c-.427 0-.838.169-1.14.47l-1.55 1.55z" />
-                        </svg>
+                        <i data-lucide="folder-up" class="folder-icon"></i>
                         <p id="folder-path-display">Kéo & thả thư mục bài tập hoặc click để chọn</p>
                     </div>
                 </div>
@@ -203,9 +203,7 @@
                 <!-- Open Project in IDE section (Dynamic) -->
                 <div id="clone-success-ide-actions" class="glass-card" style="display: none; margin-bottom: 25px; border-color: var(--accent-green); padding: 20px;">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                        <svg class="toast-icon success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 22px; height: 22px;">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <i data-lucide="check-circle" class="toast-icon success" style="width: 22px; height: 22px;"></i>
                         <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: var(--text-primary);">Tải về thành công! Mở dự án bằng công cụ lập trình:</h3>
                     </div>
                     <div id="ide-buttons-container" style="display: flex; gap: 12px; flex-wrap: wrap;">
@@ -259,9 +257,7 @@
                 <div id="repo-detail-view" style="display: none;">
                     <div class="detail-header-bar">
                         <button class="btn-secondary" id="btn-back-to-list" onclick="hideRepoDetail()">
-                            <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 6px;">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                            </svg>
+                            <i data-lucide="arrow-left" class="back-icon" style="width: 16px; height: 16px; margin-right: 6px; display: inline-block; vertical-align: middle;"></i>
                             Quay lại
                         </button>
                         <div class="repo-meta-header" style="display: flex; align-items: center; gap: 12px; margin-left: 15px;">
@@ -270,24 +266,38 @@
                         </div>
                     </div>
 
-                    <div class="repo-detail-content-layout" style="display: grid; grid-template-columns: 280px 1fr; gap: 25px; align-items: start; margin-top: 20px;">
+                    <div class="repo-detail-content-layout">
                         <!-- Left pane: Metadata -->
                         <div class="repo-detail-left">
                             <div class="glass-card repo-metadata-card" style="padding: 20px;">
-                                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Thông tin kho lưu trữ</h3>
-                                <p id="detail-repo-desc" class="repo-desc" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 15px; word-break: break-word;">Mô tả kho lưu trữ...</p>
-                                <div class="detail-stats-row" style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">
+                                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="info" style="width: 16px; height: 16px; color: var(--accent-purple);"></i> Thông tin kho lưu trữ
+                                </h3>
+                                <p id="detail-repo-desc" class="repo-desc">Mô tả kho lưu trữ...</p>
+                                <div class="detail-stats-row">
                                     <span id="detail-repo-stars">⭐ 0 stars</span>
                                     <span id="detail-repo-forks">🍴 0 forks</span>
                                 </div>
-                                <div class="detail-stats-row" style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">
+                                <div class="detail-stats-row">
                                     <span id="detail-repo-watchers">👁 0 watchers</span>
                                     <span id="detail-repo-size">📦 0 KB</span>
                                 </div>
-                                <div class="detail-stats-row second" style="border-top: 1px solid var(--panel-border); padding-top: 10px; margin-top: 10px; font-size: 13px; color: var(--text-secondary);">
-                                    <span id="detail-repo-lang">🌐 Ngôn ngữ: None</span>
+                                
+                                <div class="detail-languages-section" style="border-top: 1px solid var(--panel-border); padding-top: 12px; margin-top: 12px;">
+                                    <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                        <i data-lucide="code-2" style="width: 14px; height: 14px; color: var(--accent-blue);"></i> Ngôn ngữ sử dụng
+                                    </h4>
+                                    <!-- Languages Bar -->
+                                    <div class="repo-lang-bar-container" id="repo-lang-bar" style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,0.05); margin-bottom: 10px;">
+                                    </div>
+                                    <!-- Languages List -->
+                                    <div class="repo-lang-list" id="repo-lang-list" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-secondary);">
+                                    </div>
                                 </div>
-                                <button class="btn-primary" id="btn-open-in-github" style="margin-top: 15px; width: 100%; font-size: 13px; padding: 10px;">Mở trên GitHub</button>
+
+                                <button class="btn-primary" id="btn-open-in-github" style="margin-top: 15px; width: 100%; font-size: 13px; padding: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Mở trên GitHub
+                                </button>
                             </div>
                         </div>
 
@@ -296,7 +306,6 @@
                             <div class="github-tabs" style="display: flex; gap: 5px; border-bottom: 1px solid var(--panel-border); padding-bottom: 5px;">
                                 <button class="github-tab-btn active" style="background: transparent; border: none; color: var(--accent-blue); border-bottom: 2px solid var(--accent-blue); padding: 8px 16px; font-size: 13.5px; font-weight: 600; cursor: pointer;">Code</button>
                             </div>
-                            
                             <!-- File Explorer -->
                             <div class="glass-card file-explorer-card" style="padding: 0; overflow: hidden; border-radius: 12px;">
                                 <div class="explorer-header" style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--panel-border); padding: 12px 20px; font-family: 'Fira Code', monospace; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between;">
@@ -318,12 +327,27 @@
                                 </div>
                             </div>
 
+                            <!-- File Editor (Trình soạn thảo file trực tiếp) -->
+                            <div class="glass-card file-editor-card" id="file-editor-container" style="display: none; padding: 20px; flex-direction: column; gap: 15px; border-radius: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px; margin-bottom: 5px;">
+                                    <span style="font-weight: 600; font-family: 'Fira Code', monospace; color: var(--text-primary);" id="editor-file-name">filename.txt</span>
+                                    <button class="btn-secondary" onclick="closeFileEditor()" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i data-lucide="x" style="width: 14px; height: 14px;"></i> Đóng
+                                    </button>
+                                </div>
+                                <textarea id="editor-text-content" style="width: 100%; height: 350px; background: rgba(0,0,0,0.25); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); font-family: 'Fira Code', monospace; font-size: 13px; padding: 12px; resize: vertical; outline: none; line-height: 1.5;"></textarea>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="text" id="editor-commit-msg" placeholder="Commit message (ví dụ: Cập nhật README.md)" style="flex-grow: 1; height: 38px; margin-bottom: 0; border: 1px solid var(--panel-border); border-radius: 8px; background: rgba(255,255,255,0.02); color: var(--text-primary); padding: 0 12px;">
+                                    <button class="btn-primary" id="btn-save-file" onclick="saveFileContent()" style="padding: 0 20px; height: 38px; font-size: 13px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i data-lucide="save" style="width: 14px; height: 14px;"></i> Lưu & Commit
+                                    </button>
+                                </div>
+                            </div>
+
                             <!-- README -->
                             <div class="glass-card readme-card" id="detail-readme-container" style="padding: 0; overflow: hidden; border-radius: 12px;">
                                 <div class="readme-header" style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--panel-border); padding: 12px 20px; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
-                                    <svg class="readme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; color: var(--text-secondary);">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                                    </svg>
+                                    <i data-lucide="book-open" class="readme-icon" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
                                     <span>README.md</span>
                                 </div>
                                 <div class="readme-content" id="detail-readme-content" style="padding: 20px; font-size: 13.5px; line-height: 1.6; color: var(--text-primary); user-select: text;">
@@ -419,6 +443,23 @@
                         </div>
                     </div>
 
+                    <div class="settings-section-divider"></div>
+                    <h3 class="settings-subtitle">Trợ lý AI</h3>
+
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="setting-ai-key">AI API Key (OpenRouter)</label>
+                            <div class="password-input-container">
+                                <input type="password" id="setting-ai-key" placeholder="sk-or-v1-...">
+                                <button type="button" class="btn-toggle-visibility" onclick="toggleAiKeyVisibility()">👁</button>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="setting-ai-model">AI Model</label>
+                            <input type="text" id="setting-ai-model" placeholder="openai/gpt-4o-mini:free">
+                        </div>
+                    </div>
+
                     <div class="settings-actions">
                         <button class="btn-primary" onclick="saveSettings()">Lưu cài đặt</button>
                         <span id="settings-status-msg" class="status-message"></span>
@@ -449,9 +490,7 @@
                 </div>
                 <div class="glass-card guide-container" style="padding: 0; overflow: hidden; border-radius: 12px;">
                     <div class="guide-header" style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--panel-border); padding: 12px 20px; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
-                        <svg class="readme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; color: var(--text-secondary);">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                        </svg>
+                        <i data-lucide="book-open" class="readme-icon" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
                         <span>Văn bản hướng dẫn: HUONG_DAN.txt</span>
                     </div>
                     <div id="guide-tab-content" style="padding: 20px 24px;">
@@ -466,9 +505,7 @@
     <div id="success-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content glass-card">
             <div class="modal-header">
-                <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <i data-lucide="check-circle" class="success-icon" style="width: 24px; height: 24px; color: var(--accent-green);"></i>
                 <h3>Đẩy mã nguồn thành công!</h3>
             </div>
             <div class="modal-body">
@@ -487,9 +524,7 @@
     <div id="delete-confirm-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content glass-card" style="max-width: 420px; text-align: left;">
             <div class="modal-header" style="align-items: center; flex-direction: row; gap: 12px; margin-bottom: 15px;">
-                <svg class="toast-icon error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 28px; height: 28px; filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.2));">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+                <i data-lucide="trash-2" class="toast-icon error" style="width: 28px; height: 28px; color: var(--accent-red); filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.2));"></i>
                 <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary);">Xác nhận xóa Repository</h3>
             </div>
             <div class="modal-body" style="margin-bottom: 20px;">
@@ -509,6 +544,49 @@
         </div>
     </div>
 
+    <!-- Chat Panel -->
+    <div class="chat-overlay" id="chatOverlay" onclick="toggleChatPanel()"></div>
+    <div class="chat-panel" id="chatPanel">
+        <!-- Resizer handle -->
+        <div class="chat-resizer" id="chatResizer"></div>
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <img src="./src/assets/images/ai-logo.png" class="chat-header-logo" alt="AI" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+                <span>Trợ lý G-GitUpload</span>
+            </div>
+            <button class="chat-close-btn" onclick="toggleChatPanel()">&times;</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg assistant">
+                <div class="chat-msg-label">AI</div>
+                <div class="chat-msg-content">Chào bạn! Tôi là trợ lý G-GitUpload. Bạn có thể chọn nhanh một câu hỏi bên dưới hoặc tự nhập câu hỏi:</div>
+                <div class="chat-quick-actions">
+                    <button class="quick-action-btn" onclick="sendQuickQuery('Xem hướng dẫn sử dụng')">📖 Hướng dẫn sử dụng</button>
+                    <button class="quick-action-btn" onclick="sendQuickQuery('Cách push bài tập lên GitHub')">🚀 Cách push bài tập</button>
+                    <button class="quick-action-btn" onclick="sendQuickQuery('Giải thích về Naming Pattern')">⚙️ Naming Pattern</button>
+                    <button class="quick-action-btn" onclick="sendQuickQuery('Làm sao để clone repo?')">📥 Cách clone repo</button>
+                    <button class="quick-action-btn" onclick="sendQuickQuery('Công cụ này do ai phát triển?')">👤 Tác giả phát triển?</button>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <textarea class="chat-input" id="chatInput" rows="1" placeholder="Nhập câu hỏi..." maxlength="2000"></textarea>
+            <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">
+                <i data-lucide="send-horizontal" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating AI Circle Button with Badge & Tooltip -->
+    <div class="chat-fab-container" id="chatFabContainer">
+        <button class="chat-toggle-fab" id="chatToggleBtn" style="cursor: grab; overflow: hidden; padding: 0;">
+            <img src="./src/assets/images/ai-logo.png" class="chat-fab-logo" id="chatFabLogo" alt="AI" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; pointer-events: none;">
+            <div class="chat-fab-badge" id="chatFabBadge" style="display: none;">!</div>
+        </button>
+        <div class="chat-fab-tooltip" id="chatFabTooltip" style="display: none;">Phát hiện lỗi! Nhấp để Stephen chẩn đoán</div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="./src/main.js" type="module"></script>
 </body>
 </html>
